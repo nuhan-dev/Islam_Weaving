@@ -185,6 +185,18 @@
   }
   .week-pill i { display: block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f43f5e; }
 
+
+  /* Round dots that bump (same feel as the Online / LIVE dots) */
+  @keyframes dot-scale { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+  .dot-bump {
+    --dot: #f43f5e;
+    background: var(--dot);
+    box-shadow: 0 0 4px 1px var(--dot);
+    animation: dot-breathe 2.6s ease-in-out infinite, dot-scale 2.6s ease-in-out infinite;
+  }
+  .dot-bump.dot-green { --dot: #10b981; }
+  .saved-note { margin-top: 6px; font-size: 11px; font-weight: 600; color: #64748b; }
+
   .nav-tab:focus-visible { outline: 2px solid #fbbf24; outline-offset: 2px; }
 
   @media (min-width: 640px) {
@@ -235,7 +247,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .live-fast-ping, .status-dot-breathe, .month-shine { animation: none; }
+    .live-fast-ping, .status-dot-breathe, .month-shine, .dot-bump { animation: none; }
   }
 </style>
 </head>
@@ -316,6 +328,7 @@ const I18N = {
     syncMsgNoUrl: 'লিংক এখনো বসানো হয়নি', syncMsgSyncing: 'সিঙ্ক হচ্ছে...',
     languageTitle: 'ভাষা নির্বাচন (Language)', languageDesc: 'আপনার পছন্দের ভাষা বেছে নিন।',
     langBangla: 'বাংলা', langEnglish: 'English',
+    savedLabel: 'সেভ করা আছে:',
   },
   en: {
     title: 'Islam Weaving Factory',
@@ -353,6 +366,7 @@ const I18N = {
     syncMsgNoUrl: 'Link not configured', syncMsgSyncing: 'Syncing...',
     languageTitle: 'Language Selection', languageDesc: 'Choose interface language.',
     langBangla: 'বাংলা', langEnglish: 'English',
+    savedLabel: 'Saved:',
   }
 };
 
@@ -481,7 +495,7 @@ function plMarkup(v) {
   const colorClass = isPos ? 'text-finGreen-600' : 'text-finRed-600';
   const bgBadge = isPos ? 'bg-emerald-50/90 border-emerald-300' : 'bg-rose-50/90 border-rose-300';
   return `<div class="inline-flex items-center gap-1.5 font-extrabold ${colorClass} px-3.5 py-1.5 rounded-full text-sm border ${bgBadge} shadow-sm">
-            <span class="inline-block w-2 h-2 rounded-full ${isPos ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+            <span class="inline-block w-2 h-2 rounded-full dot-bump ${isPos ? 'dot-green' : ''}"></span>
             ${fmtBDT(n)}
           </div>`;
 }
@@ -733,7 +747,7 @@ function getCycleShortName() {
 function cycleHeadingHTML() {
   const groups = getCycleInfo();
   if (!groups) return `<div class="cycle-row single"><div class="cycle-chip"><span class="cycle-month">${getCurrentMonthName()}</span></div></div>`;
-  const chips = groups.map(g => `<div class="cycle-chip"><span class="cycle-month">${cycleMonthLabel(g)}</span>${groups.length > 1 ? `<span class="week-pill"><i></i>${cycleWeekLabel(g)}</span>` : ''}</div>`);
+  const chips = groups.map(g => `<div class="cycle-chip"><span class="cycle-month">${cycleMonthLabel(g)}</span>${groups.length > 1 ? `<span class="week-pill"><i class="dot-bump"></i>${cycleWeekLabel(g)}</span>` : ''}</div>`);
   return `<div class="cycle-row${groups.length === 1 ? ' single' : ''}">${chips.join('<span class="cycle-sep">–</span>')}</div>`;
 }
 
@@ -757,11 +771,13 @@ function renderLifetime() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('labelInvestment')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inv" type="number" value="${cur.investment || ''}" />
+            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inv" type="number" inputmode="numeric" value="" />
+            ${Number(cur.investment) ? `<div class="saved-note">${t('savedLabel')} ${fmtBDT(cur.investment)}</div>` : ''}
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('labelMonthlyIncome')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inc" type="number" value="${cur.monthlyIncome || ''}" />
+            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inc" type="number" inputmode="numeric" value="" />
+            ${Number(cur.monthlyIncome) ? `<div class="saved-note">${t('savedLabel')} ${fmtBDT(cur.monthlyIncome)}</div>` : ''}
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600 mb-5 bg-white/50 p-4 rounded-xl border border-slate-200/60 font-medium">
@@ -839,10 +855,14 @@ function renderLifetime() {
 }
 
 async function saveCurrentLifetime(i) {
-  const investment = Number(document.getElementById('life-cur-inv').value) || 0;
-  const monthlyIncome = Number(document.getElementById('life-cur-inc').value) || 0;
-  const year = data.lifetime[i].year;
-  const month = data.lifetime[i].month;
+  const row = data.lifetime[i];
+  const invVal = document.getElementById('life-cur-inv').value.trim();
+  const incVal = document.getElementById('life-cur-inc').value.trim();
+  // A box left empty keeps the amount already saved in the sheet (so it never gets overwritten with 0)
+  const investment = invVal !== '' ? (Number(invVal) || 0) : (Number(row.investment) || 0);
+  const monthlyIncome = incVal !== '' ? (Number(incVal) || 0) : (Number(row.monthlyIncome) || 0);
+  const year = row.year;
+  const month = row.month;
   await pushAction({ action: 'updateLifetimeMonth', year, month, investment, monthlyIncome });
 }
 
