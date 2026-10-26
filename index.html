@@ -417,8 +417,8 @@ function renderDashboard() {
   el.innerHTML = `
     <div class="space-y-6">
       <div class="fintech-hero text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden">
-        <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-          <h2 class="font-serif font-bold text-slate-100 text-lg sm:text-xl tracking-wide">${t('prodCardTitle')} <span class="month-glow">${getCurrentMonthName()}</span></h2>
+        <div class="flex justify-between items-center gap-3 mb-6 border-b border-white/10 pb-4">
+          <h2 class="font-serif font-bold text-slate-100 text-lg sm:text-xl tracking-wide flex flex-wrap items-center gap-x-2 gap-y-1.5"><span>${t('prodCardTitle')}</span>${cycleHeadingHTML()}</h2>
           ${liveBadge('lg')}
         </div>
 
@@ -437,7 +437,7 @@ function renderDashboard() {
             <div class="text-2xl font-black text-slate-100 tracking-tight">${fmtBDT(p2)}</div>
           </div>
           <div class="bg-luxuryGold-400/10 border border-luxuryGold-400/30 p-5 rounded-2xl shadow-inner">
-            <div class="text-[11px] font-bold text-luxuryGold-400 uppercase tracking-wider mb-1">${t('labelSingeingIncome', getCurrentMonthName())}</div>
+            <div class="text-[11px] font-bold text-luxuryGold-400 uppercase tracking-wider mb-1">${t('labelSingeingIncome', getCycleShortName())}</div>
             <div class="text-2xl font-black text-luxuryGold-400 tracking-tight">${fmtBDT(singeingIncome)}</div>
           </div>
           <div class="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl shadow-inner">
@@ -563,6 +563,62 @@ const MONTH_NAMES_BN = ['জানুয়ারি','ফেব্রুয়�
 function getCurrentMonthName() {
   const idx = new Date().getMonth();
   return lang === 'bn' ? MONTH_NAMES_BN[idx] : MONTH_NAMES[idx];
+}
+
+// ---- 4-week cycle label (derived from the week dates in the sheet) ----
+function parseSheetDate(v) {
+  if (!v) return null;
+  const str = String(v).trim();
+  let m = str.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2}|\d{4})$/);
+  if (m) {
+    let y = Number(m[3]); if (y < 100) y += 2000;
+    const d = Number(m[1]), mo = Number(m[2]) - 1;
+    if (d < 1 || d > 31 || mo < 0 || mo > 11) return null;
+    return { d, m: mo, y };
+  }
+  const dt = new Date(str);
+  if (!isNaN(dt)) return { d: dt.getDate(), m: dt.getMonth(), y: dt.getFullYear() };
+  return null;
+}
+
+// Returns [{m, y, from, to}] — one entry if all weeks fall in one month, two if the cycle spans two months.
+// from/to = week-of-month numbers (1-7 = Week 1, 8-14 = Week 2, ...), same rule as the sheet header.
+function getCycleInfo() {
+  const rows = (data && Array.isArray(data.weeks)) ? data.weeks.slice(0, 4) : [];
+  const dates = rows.map(w => parseSheetDate(w && w.date)).filter(Boolean);
+  if (!dates.length) return null;
+  const key = x => x.y * 12 + x.m;
+  const wk = x => Math.ceil(x.d / 7);
+  const k0 = key(dates[0]);
+  const first = dates.filter(x => key(x) === k0);
+  const rest = dates.filter(x => key(x) !== k0);
+  const mk = arr => ({ m: arr[0].m, y: arr[0].y, from: wk(arr[0]), to: wk(arr[arr.length - 1]) });
+  return rest.length ? [mk(first), mk(rest)] : [mk(first)];
+}
+
+function cycleMonthLabel(g) {
+  return (lang === 'bn' ? MONTH_NAMES_BN : MONTH_NAMES)[g.m] + ' ' + g.y;
+}
+
+function cycleWeekLabel(g) {
+  const w = lang === 'bn' ? 'সপ্তাহ' : 'Week';
+  return g.from === g.to ? w + ' ' + g.from : w + ' ' + g.from + '-' + g.to;
+}
+
+// Short month name(s) for labels, e.g. "September" or "August–September"
+function getCycleShortName() {
+  const groups = getCycleInfo();
+  if (!groups) return getCurrentMonthName();
+  const names = lang === 'bn' ? MONTH_NAMES_BN : MONTH_NAMES;
+  return groups.map(g => names[g.m]).join('–');
+}
+
+// Heading markup: "September 2026" or "August 2026 [Week 4] – September 2026 [Week 1-3]"
+function cycleHeadingHTML() {
+  const groups = getCycleInfo();
+  if (!groups) return `<span class="month-glow">${getCurrentMonthName()}</span>`;
+  if (groups.length === 1) return `<span class="month-glow">${cycleMonthLabel(groups[0])}</span>`;
+  return groups.map(g => `<span class="inline-flex items-center gap-1.5"><span class="month-glow">${cycleMonthLabel(g)}</span><span class="text-[10px] font-extrabold tracking-wide text-luxuryGold-400 bg-luxuryGold-400/10 border border-luxuryGold-400/30 px-2 py-0.5 rounded-md">${cycleWeekLabel(g)}</span></span>`).join('<span class="text-slate-500">–</span>');
 }
 
 function renderLifetime() {
