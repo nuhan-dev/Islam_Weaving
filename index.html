@@ -633,11 +633,13 @@ function renderProduction() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">তারিখ (Date)</label>
-          <input class="input-field text-sm font-semibold w-full" id="prod-date-${i}" placeholder="${t('datePlaceholder')}" value="${w.date || ''}" />
+          <input class="input-field text-sm font-semibold w-full" id="prod-date-${i}" placeholder="${t('datePlaceholder')}" value="" />
+          ${w.date ? `<div class="saved-note">${t('savedLabel')} ${w.date}</div>` : ''}
         </div>
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">মোট পিস (Total Pieces)</label>
-          <input class="input-field text-sm font-semibold w-full" id="prod-pieces-${i}" type="number" placeholder="${t('piecesPlaceholder')}" value="${w.totalPieces || ''}" />
+          <input class="input-field text-sm font-semibold w-full" id="prod-pieces-${i}" type="number" inputmode="numeric" placeholder="${t('piecesPlaceholder')}" value="" />
+          ${Number(w.totalPieces) ? `<div class="saved-note">${t('savedLabel')} ${w.totalPieces}</div>` : ''}
         </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs mb-5 bg-white/50 p-4 rounded-xl border border-slate-200/60">
@@ -653,8 +655,12 @@ function renderProduction() {
 }
 
 async function saveWeek(i) {
-  const date = document.getElementById('prod-date-' + i).value;
-  const totalPieces = Number(document.getElementById('prod-pieces-' + i).value) || 0;
+  const row = data.weeks[i];
+  const dateVal = document.getElementById('prod-date-' + i).value.trim();
+  const piecesVal = document.getElementById('prod-pieces-' + i).value.trim();
+  // A box left empty keeps the value already saved in the sheet (never overwritten with blank/0)
+  const date = dateVal !== '' ? dateVal : (row.date || '');
+  const totalPieces = piecesVal !== '' ? (Number(piecesVal) || 0) : (Number(row.totalPieces) || 0);
   await pushAction({ action: 'updateWeek', weekIndex: i + 1, date, totalPieces });
 }
 
@@ -666,9 +672,10 @@ function renderSingeing() {
       <div>
         <div class="font-bold text-brand-900 text-base">${t('weekLabel', s.week)}</div>
         <div class="text-xs text-slate-600 font-medium mt-0.5">${s.date} · ${t('payLabel')} <span class="font-extrabold text-brand-900">${fmtBDT(s.pay)}</span></div>
+        ${Number(s.singedThaan) ? `<div class="saved-note">${t('savedLabel')} ${s.singedThaan}</div>` : ''}
       </div>
       <div class="flex gap-3 w-full sm:w-auto">
-        <input class="input-field text-sm font-bold w-full sm:w-36" id="sing-${i}" type="number" placeholder="${t('singedPlaceholder')}" value="${s.singedThaan || ''}" />
+        <input class="input-field text-sm font-bold w-full sm:w-36" id="sing-${i}" type="number" inputmode="numeric" placeholder="${t('singedPlaceholder')}" value="" />
         <button class="glass-btn-primary font-bold text-xs px-6 py-2.5 rounded-xl whitespace-nowrap" onclick="saveSingeing(${i})">${t('btnSave')}</button>
       </div>
     </div>
@@ -676,7 +683,10 @@ function renderSingeing() {
 }
 
 async function saveSingeing(i) {
-  const singedThaan = Number(document.getElementById('sing-' + i).value) || 0;
+  const row = data.singeing[i];
+  const val = document.getElementById('sing-' + i).value.trim();
+  // A box left empty keeps the value already saved in the sheet
+  const singedThaan = val !== '' ? (Number(val) || 0) : (Number(row.singedThaan) || 0);
   await pushAction({ action: 'updateSingeing', weekIndex: i + 1, singedThaan });
 }
 
