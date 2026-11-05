@@ -815,7 +815,7 @@ function weeksChartHTML() {
   const y = v => top + ((max - v) / span) * (H - top - bottom);
   const y0 = y(0);
   const slot = (W - pad * 2) / rows.length;
-  const bw = Math.min(48, slot * 0.58);
+  const bw = Math.min(22, slot * 0.28);
   let bars = '';
   vals.forEach((v, i) => {
     const x = pad + slot * i + (slot - bw) / 2;
@@ -824,7 +824,7 @@ function weeksChartHTML() {
     const pos = v >= 0;
     const labelY = pos ? yy - 7 : yy + hh + 14;
     const cx = (x + bw / 2).toFixed(1);
-    bars += `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="8" fill="url(#${pos ? 'cgPos' : 'cgNeg'})"></rect>`
+    bars += `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="5" fill="url(#${pos ? 'cgPos' : 'cgNeg'})"></rect>`
       + `<text x="${cx}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="800" fill="${pos ? '#047857' : '#b91c1c'}">${fmtBDT(v)}</text>`
       + `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="#64748b">${localDigits(lang === 'bn' ? 'সপ্তাহ ' + (i + 1) : 'Wk ' + (i + 1))}</text>`;
   });
@@ -895,12 +895,15 @@ const PEN_SVG = '<svg class="ico-pen" viewBox="0 0 24 24" fill="none" stroke="cu
 const CLOSE_SVG = '<svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
 // An amount box: empty and editable until a value is saved; after that it is locked until the pen is tapped
-function lockBox(id, saved, cls, placeholder, extra) {
-  const has = saved !== '' && saved !== null && saved !== undefined && Number(saved) !== 0 && !isNaN(Number(saved));
+function lockBox(id, saved, cls, placeholder, extra, kind) {
+  const isText = kind === 'text';
+  const has = isText
+    ? (saved !== null && saved !== undefined && String(saved).trim() !== '')
+    : (saved !== '' && saved !== null && saved !== undefined && Number(saved) !== 0 && !isNaN(Number(saved)));
   const editing = has && unlockedFields.has(id);
   const locked = has && !editing;
   return `<div class="lock-wrap${extra ? ' ' + extra : ''}${editing ? ' is-editing' : ''}">
-    <input class="${cls}${locked ? ' is-locked' : ''}" id="${id}" type="number" inputmode="numeric" value="${has ? saved : ''}"${locked ? ' readonly' : ''} />
+    <input class="${cls}${locked ? ' is-locked' : ''}" id="${id}" type="${isText ? 'text' : 'number'}"${isText ? '' : ' inputmode="numeric"'} value="${has ? saved : ''}"${locked ? ' readonly' : ''} />
     ${has ? `<button type="button" class="pen-btn" onclick="togglePen('${id}')" aria-label="${t('editLabel')}">${PEN_SVG}${CLOSE_SVG}</button>` : ''}
   </div>`;
 }
@@ -1118,8 +1121,7 @@ function renderProduction() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">তারিখ (Date)</label>
-          <input class="input-field text-sm font-semibold w-full" id="prod-date-${i}" value="" />
-          ${w.date ? `<div class="saved-note">${t('savedLabel')} ${w.date}</div>` : ''}
+          ${lockBox('prod-date-' + i, w.date, 'input-field text-sm font-semibold w-full', '', '', 'text')}
         </div>
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">মোট পিস (Total Pieces)</label>
@@ -1147,8 +1149,7 @@ async function saveWeek(i) {
   const totalPieces = piecesVal !== '' ? (Number(piecesVal) || 0) : (Number(row.totalPieces) || 0);
   await pushAction({ action: 'updateWeek', weekIndex: i + 1, date, totalPieces }, {
     key: 'week-' + i,
-    clearIds: ['prod-date-' + i],
-    lockIds: ['prod-pieces-' + i],
+    lockIds: ['prod-date-' + i, 'prod-pieces-' + i],
     apply: () => { row.date = date; row.totalPieces = totalPieces; },
   });
 }
