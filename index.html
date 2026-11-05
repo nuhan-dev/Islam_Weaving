@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Islam Weaving" />
 <link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="preconnect" href="https://script.google.com" crossorigin />
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Tiro+Bangla&display=swap" rel="stylesheet" />
@@ -247,11 +249,102 @@
   @media (prefers-reduced-motion: reduce) {
     .live-fast-ping, .status-dot-breathe, .month-shine, .ping-dot .ring { animation: none; }
   }
+
+  /* ===== Pro polish: splash, toast, skeleton, charts, motion ===== */
+  @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes skel-move { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @keyframes btn-spin { to { transform: rotate(360deg); } }
+  @keyframes splash-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+
+  .panel:not(.hidden) { animation: panel-in 0.35s ease both; }
+  .reveal { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+
+  .glass-btn-primary, .nav-tab, #syncBtn { transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease; }
+  .glass-btn-primary:active, .nav-tab:active, #syncBtn:active { transform: scale(0.96); }
+
+  .btn-loading { pointer-events: none; opacity: 0.85; }
+  .btn-loading::before {
+    content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px;
+    border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #ffffff; border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+  }
+
+  #splash {
+    position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(circle at 50% 35%, #1b2a55 0%, #0b1329 70%);
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  #splash.out { opacity: 0; visibility: hidden; }
+  #splash img { width: 84px; height: 84px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.25); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+  #splash .splash-title { font-family: 'Tiro Bangla', serif; font-weight: 700; font-size: 1.25rem; color: #f8fafc; }
+  #splash .splash-bar { width: 120px; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+  #splash .splash-bar i { display: block; width: 40%; height: 100%; border-radius: 3px; background: #fbbf24; animation: splash-bar 1.1s ease-in-out infinite; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; z-index: 90; max-width: min(92vw, 420px);
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    padding: 11px 18px; border-radius: 9999px; font-size: 13px; font-weight: 700; color: #fff;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast.ok { background: linear-gradient(to right, #059669, #10b981); }
+  #toast.err { background: linear-gradient(to right, #dc2626, #ef4444); }
+  #toast.info { background: #334155; }
+
+  .offline-bar { background: #fbbf24; color: #1f2937; text-align: center; font-size: 12px; font-weight: 800; padding: 6px 12px; }
+  .offline-bar[hidden] { display: none; }
+
+  .skel { border-radius: 10px; background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.38), rgba(148, 163, 184, 0.18)); background-size: 200% 100%; animation: skel-move 1.3s linear infinite; }
+  .skel-dark { border-radius: 10px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)); background-size: 200% 100%; animation: skel-move 1.3s linear infinite; }
+
+  .delta { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 9999px; vertical-align: 1px; white-space: nowrap; }
+  .delta.up { color: #047857; background: rgba(16, 185, 129, 0.15); }
+  .delta.down { color: #b91c1c; background: rgba(239, 68, 68, 0.15); }
+
+  .chart-svg { display: block; width: 100%; height: auto; }
+  .chart-deltas { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; padding: 0 4.4% 14px; }
+  .chart-deltas .delta { margin-left: 0; }
+  .chart-note { padding: 14px 24px 18px; font-size: 12px; font-weight: 600; color: #64748b; }
+
+  /* Locked amount boxes with a pen button */
+  .lock-wrap { position: relative; }
+  .lock-wrap .input-field { padding-right: 48px; }
+  .input-field.is-locked { background: rgba(226, 232, 240, 0.6); color: #475569; cursor: default; border-style: dashed; }
+  .pen-btn {
+    position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+    width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; padding: 0;
+    border: 1px solid rgba(148, 163, 184, 0.55); background: rgba(255, 255, 255, 0.9); color: #475569;
+    transition: transform 0.12s ease, color 0.2s ease;
+  }
+  .pen-btn:active { transform: translateY(-50%) scale(0.9); }
+  .pen-btn svg { width: 16px; height: 16px; }
+  .pen-btn .ico-x { display: none; }
+  .lock-wrap.is-editing .pen-btn { color: #b91c1c; border-color: rgba(239, 68, 68, 0.5); }
+  .lock-wrap.is-editing .ico-pen { display: none; }
+  .lock-wrap.is-editing .ico-x { display: block; }
+  .lock-wrap.sing { flex: 1 1 auto; min-width: 0; }
+  @media (min-width: 640px) { .lock-wrap.sing { flex: none; width: 9.5rem; } }
+
+  @media (max-width: 767px) {
+    #toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel:not(.hidden), .reveal, .skel, .skel-dark, #splash .splash-bar i { animation: none; }
+  }
 </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
+<div id="splash" aria-hidden="true">
+  <img src="icon-192.png" alt="" />
+  <div class="splash-title" id="splashTitle">ইসলাম উইভিং ফ্যাক্টরি</div>
+  <div class="splash-bar"><i></i></div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <div class="app-top">
+<div id="offlineBar" class="offline-bar" hidden></div>
 <header class="app-header bg-brand-950/80 text-white border-b border-white/10 shadow-2xl">
   <div class="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center gap-3">
     <div class="hdr-left flex items-center gap-3.5">
@@ -327,6 +420,21 @@ const I18N = {
     languageTitle: 'ভাষা নির্বাচন (Language)', languageDesc: 'আপনার পছন্দের ভাষা বেছে নিন।',
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'সেভ করা আছে:',
+    editLabel: 'এডিট করুন',
+    toastSaved: 'সেভ হয়েছে ✓',
+    toastFailed: 'সেভ হয়নি — আবার চেষ্টা করুন',
+    toastOffline: 'ইন্টারনেট নেই — সেভ করা যায়নি',
+    toastNoUrl: 'আগে সেটিংসে শিটের URL দিন',
+    offlineBar: (tm) => `অফলাইন — শেষ সিঙ্ক: ${tm}`,
+    offlineNever: 'এখনো সিঙ্ক হয়নি',
+    chartWeeklyTitle: 'সপ্তাহভিত্তিক লাভ',
+    chartWeeklySub: 'নিচের চিহ্নে আগের সপ্তাহের তুলনায় ওঠানামা',
+    chartYearTitle: (y) => `${y} সালের লাভ/ক্ষতির গতি`,
+    chartNeedMore: 'চার্ট দেখাতে অন্তত দুই মাসের ডেটা লাগবে',
+    lastSync: (tm) => `শেষ সিঙ্ক: ${tm}`,
+    installTitle: 'অ্যাপ ইনস্টল করুন',
+    installDesc: 'হোম স্ক্রিনে যোগ করলে পুরো স্ক্রিনে অ্যাপের মতো খুলবে।',
+    installBtn: 'ইনস্টল করুন',
   },
   en: {
     title: 'Islam Weaving Factory',
@@ -365,6 +473,21 @@ const I18N = {
     languageTitle: 'Language Selection', languageDesc: 'Choose interface language.',
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'Saved:',
+    editLabel: 'Edit',
+    toastSaved: 'Saved ✓',
+    toastFailed: 'Could not save — please try again',
+    toastOffline: 'No internet — could not save',
+    toastNoUrl: 'Add the sheet URL in Settings first',
+    offlineBar: (tm) => `Offline — last sync: ${tm}`,
+    offlineNever: 'not synced yet',
+    chartWeeklyTitle: 'Weekly profit',
+    chartWeeklySub: 'Chips below show change vs the previous week',
+    chartYearTitle: (y) => `${y} profit / loss trend`,
+    chartNeedMore: 'Need at least two months of data to draw the chart',
+    lastSync: (tm) => `Last sync: ${tm}`,
+    installTitle: 'Install the app',
+    installDesc: 'Add it to your home screen to open full-screen like an app.',
+    installBtn: 'Install',
   }
 };
 
@@ -401,6 +524,7 @@ const phoneMQ = window.matchMedia('(max-width: 520px)');
 
 function applyStaticText() {
   document.getElementById('hdrTitle').textContent = t('title');
+  const sp = document.getElementById('splashTitle'); if (sp) sp.textContent = t('title');
   const sub = t('subtitle');
   document.getElementById('hdrSubtitle').textContent = phoneMQ.matches ? sub.split(' — ')[0] : sub;
   setTabLabel('dashboard', 'tabDashboard');
@@ -418,6 +542,7 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('panel-' + btn.dataset.tab).classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    staggerIn(document.getElementById('panel-' + btn.dataset.tab));
   });
 });
 
@@ -443,38 +568,392 @@ function setSyncStatus(status) {
   renderSettings();
 }
 
-async function fetchFromSheet() {
-  if (!scriptUrl) { setSyncStatus('no-url'); return; }
-  setSyncStatus('syncing');
-  try {
-    const r = await fetch(scriptUrl);
-    const json = await r.json();
-    data = json;
-    setSyncStatus('ok');
-    renderAll();
-  } catch (e) {
-    setSyncStatus('error');
-  }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const CACHE_KEY = 'iwfCache';
+let lastSync = 0;
+let inflight = null;
+const pendingSaves = new Set();
+let deferredPrompt = null;
+let firstRevealDone = false;
+let splashHidden = false;
+const splashStart = Date.now();
+
+function fetchWithTimeout(url, opts, ms) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms || 15000);
+  return fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).finally(() => clearTimeout(id));
 }
 
-async function pushAction(action) {
-  if (!scriptUrl) return false;
-  setSyncStatus('syncing');
+const validData = j => !!(j && Array.isArray(j.weeks) && Array.isArray(j.singeing) && Array.isArray(j.lifetime) && j.assumptions);
+
+function loadCache() {
   try {
-    await fetch(scriptUrl, {
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (c && c.url === scriptUrl && validData(c.data)) return c;
+  } catch (e) {}
+  return null;
+}
+
+function saveCache() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ url: scriptUrl, t: lastSync, data })); } catch (e) {}
+}
+
+function applyData(json) {
+  data = json;
+  lastSync = Date.now();
+  saveCache();
+  setSyncStatus('ok');
+  renderAll();
+  updateOnlineBar();
+  hideSplashSoon();
+}
+
+function fetchFromSheet() {
+  if (!scriptUrl) { setSyncStatus('no-url'); return Promise.resolve(false); }
+  if (inflight) return inflight;
+  if (!navigator.onLine) {
+    setSyncStatus('error');
+    if (!data) renderAll();
+    updateOnlineBar();
+    hideSplashSoon();
+    return Promise.resolve(false);
+  }
+  setSyncStatus('syncing');
+  inflight = (async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetchWithTimeout(scriptUrl, { cache: 'no-store' }, 15000);
+        const json = await r.json();
+        if (!validData(json)) throw new Error('bad data');
+        applyData(json);
+        return true;
+      } catch (e) {
+        if (attempt === 0) await sleep(500);
+      }
+    }
+    setSyncStatus('error');
+    if (!data) renderAll();
+    updateOnlineBar();
+    hideSplashSoon();
+    return false;
+  })().finally(() => { inflight = null; });
+  return inflight;
+}
+
+// opts: { key, clearIds, apply }  — apply() updates local data instantly (optimistic); it is rolled back if saving fails
+async function pushAction(action, opts) {
+  const o = opts || {};
+  const key = o.key || 'save';
+  const clearIds = o.clearIds || [];
+  if (pendingSaves.has(key)) return false;
+  if (!scriptUrl) { showToast(t('toastNoUrl'), 'err'); haptic([40, 60, 40]); return false; }
+  if (!navigator.onLine) { showToast(t('toastOffline'), 'err'); haptic([40, 60, 40]); return false; }
+
+  const backup = data ? JSON.stringify(data) : null;
+  const lockIds = o.lockIds || [];
+  const typed = clearIds.concat(lockIds).map(id => { const el = document.getElementById(id); return [id, el ? el.value : '']; });
+  lockIds.forEach(id => unlockedFields.delete(id));
+  pendingSaves.add(key);
+  applyPending();
+  setSyncStatus('syncing');
+
+  if (o.apply && data) {
+    o.apply();
+    clearIds.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderAll();
+  }
+
+  try {
+    const res = await fetchWithTimeout(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(action),
-    });
-    await fetchFromSheet();
+    }, 20000);
+    let json = null;
+    try { json = await res.json(); } catch (e) {}
+    if (validData(json)) applyData(json); else await fetchFromSheet();
+    showToast(t('toastSaved'), 'ok');
+    haptic(30);
     return true;
   } catch (e) {
+    if (backup) data = JSON.parse(backup);
+    lockIds.forEach(id => unlockedFields.add(id));
     setSyncStatus('error');
+    renderAll();
+    typed.forEach(([id, v]) => { const el = document.getElementById(id); if (el && v !== '') el.value = v; });
+    showToast(t('toastFailed'), 'err');
+    haptic([40, 60, 40]);
     return false;
+  } finally {
+    pendingSaves.delete(key);
+    applyPending();
   }
 }
 
+function applyPending() {
+  document.querySelectorAll('[data-save]').forEach(el => el.classList.toggle('btn-loading', pendingSaves.has(el.dataset.save)));
+}
+
+let toastTimer;
+function showToast(msg, kind) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'show ' + (kind || 'info');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2600);
+}
+
+function haptic(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+
+function fmtTime(ts) {
+  try { return new Date(ts).toLocaleTimeString(lang === 'bn' ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+}
+
+function updateOnlineBar() {
+  const bar = document.getElementById('offlineBar');
+  if (!bar) return;
+  const off = !navigator.onLine;
+  bar.hidden = !off;
+  if (off) bar.textContent = t('offlineBar', lastSync ? fmtTime(lastSync) : t('offlineNever'));
+}
+
+function hideSplashSoon() {
+  if (splashHidden) return;
+  splashHidden = true;
+  const wait = Math.max(0, 650 - (Date.now() - splashStart));
+  setTimeout(() => {
+    const sp = document.getElementById('splash');
+    if (sp) { sp.classList.add('out'); setTimeout(() => sp.remove(), 700); }
+  }, wait);
+}
+
+// ---- count-up numbers ----
+const cuMemory = {};
+function cu(key, v) {
+  const n = Number(v) || 0;
+  return `<span class="cu" data-k="${key}" data-v="${n}">${fmtBDT(n)}</span>`;
+}
+function runCountUps() {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.cu').forEach(el => {
+    const key = el.dataset.k;
+    const target = Number(el.dataset.v) || 0;
+    const from = cuMemory[key] === undefined ? 0 : cuMemory[key];
+    cuMemory[key] = target;
+    if (reduce || from === target) return;
+    const start = performance.now();
+    const dur = 700;
+    el.textContent = fmtBDT(from);
+    const step = now => {
+      const k = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmtBDT(from + (target - from) * e);
+      if (k < 1 && el.isConnected) requestAnimationFrame(step); else el.textContent = fmtBDT(target);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---- staggered card reveal ----
+function staggerIn(panel) {
+  if (!panel) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const list = Array.from(panel.querySelectorAll('.space-y-3 > *, .space-y-4 > *, .space-y-6 > *'));
+  Array.from(panel.children).forEach(c => { if (c.classList.contains('glass-card') && !list.includes(c)) list.unshift(c); });
+  list.forEach((el, i) => {
+    el.style.setProperty('--i', Math.min(i, 8));
+    el.classList.remove('reveal');
+    void el.offsetWidth;
+    el.classList.add('reveal');
+  });
+}
+
+// ---- skeletons ----
+function isLoading() { return !!scriptUrl && syncStatus === 'syncing'; }
+
+function skeletonCards(n) {
+  const card = '<div class="glass-card p-6"><div class="skel" style="height:14px;width:40%"></div><div class="skel" style="height:34px;width:70%;margin-top:14px"></div><div class="skel" style="height:12px;width:55%;margin-top:14px"></div></div>';
+  return '<div class="space-y-4" aria-busy="true">' + Array.from({ length: n || 3 }, () => card).join('') + '</div>';
+}
+
+function skeletonDashboard() {
+  const box = '<div class="skel-dark" style="height:84px;border-radius:16px"></div>';
+  return `<div class="space-y-6" aria-busy="true">
+    <div class="fintech-hero text-white rounded-3xl p-6">
+      <div class="skel-dark" style="height:18px;width:45%;margin-bottom:14px"></div>
+      <div class="skel-dark" style="height:44px;width:70%;margin-bottom:22px;border-radius:16px"></div>
+      <div class="kpi-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">${box}${box}${box}${box}${box}</div>
+    </div>
+    ${skeletonCards(2)}
+  </div>`;
+}
+
+// ---- week-over-week chip + charts ----
+function deltaChip(cur, prev) {
+  if (prev === undefined || prev === null || prev === '') return '';
+  const d = (Number(cur) || 0) - (Number(prev) || 0);
+  if (Math.abs(d) < 1) return '';
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'} ${fmtBDT(Math.abs(d))}</span>`;
+}
+
+function chartHead(title, sub) {
+  return `<div class="px-6 py-4 border-b border-slate-200/60 bg-white/40">
+    <h2 class="font-bold text-brand-900 text-base tracking-tight">${title}</h2>
+    ${sub ? `<p class="text-[11px] text-slate-500 font-semibold mt-0.5">${sub}</p>` : ''}
+  </div>`;
+}
+
+function weeksChartHTML() {
+  const rows = (data.weeks || []).slice(0, 4);
+  const vals = rows.map(w => Number(w.combinedProfit) || 0);
+  if (!rows.length || !vals.some(v => v !== 0)) return '';
+  const W = 320, H = 172, top = 28, bottom = 30, pad = 14;
+  const max = Math.max(...vals, 0), min = Math.min(...vals, 0), span = (max - min) || 1;
+  const y = v => top + ((max - v) / span) * (H - top - bottom);
+  const y0 = y(0);
+  const slot = (W - pad * 2) / rows.length;
+  const bw = Math.min(48, slot * 0.58);
+  let bars = '';
+  vals.forEach((v, i) => {
+    const x = pad + slot * i + (slot - bw) / 2;
+    const yy = Math.min(y(v), y0);
+    const hh = Math.max(Math.abs(y(v) - y0), 2);
+    const pos = v >= 0;
+    const labelY = pos ? yy - 7 : yy + hh + 14;
+    const cx = (x + bw / 2).toFixed(1);
+    bars += `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="8" fill="url(#${pos ? 'cgPos' : 'cgNeg'})"></rect>`
+      + `<text x="${cx}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="800" fill="${pos ? '#047857' : '#b91c1c'}">${fmtBDT(v)}</text>`
+      + `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="#64748b">${localDigits(lang === 'bn' ? 'সপ্তাহ ' + (i + 1) : 'Wk ' + (i + 1))}</text>`;
+  });
+  const deltas = vals.map((v, i) => (i === 0 ? '<span></span>' : (deltaChip(v, vals[i - 1]) || '<span></span>'))).join('');
+  return `<div class="glass-card overflow-hidden">
+    ${chartHead(t('chartWeeklyTitle'), t('chartWeeklySub'))}
+    <div style="padding-top:12px">
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('chartWeeklyTitle')}">
+        <defs>
+          <linearGradient id="cgPos" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#059669"/></linearGradient>
+          <linearGradient id="cgNeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f87171"/><stop offset="1" stop-color="#dc2626"/></linearGradient>
+        </defs>
+        <line x1="${pad}" x2="${W - pad}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#cbd5e1" stroke-dasharray="3 4"></line>
+        ${bars}
+      </svg>
+      <div class="chart-deltas">${deltas}</div>
+    </div>
+  </div>`;
+}
+
+function lifetimeChartHTML(curYear) {
+  const MS = lang === 'bn'
+    ? ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const nowMonth = new Date().getMonth();
+  const pts = [];
+  data.lifetime.forEach(r => {
+    if (Number(r.year) !== curYear || r.profitLossYear === '' || r.profitLossYear === null || r.profitLossYear === undefined) return;
+    const mi = MONTH_NAMES.indexOf(r.month);
+    if (mi < 0 || mi > nowMonth) return;
+    pts.push({ mi, v: Number(r.profitLossYear) || 0 });
+  });
+  const head = chartHead(t('chartYearTitle', localDigits(curYear)), '');
+  if (pts.length < 2) return `<div class="glass-card overflow-hidden">${head}<div class="chart-note">${t('chartNeedMore')}</div></div>`;
+
+  const W = 320, H = 176, padX = 16, top = 30, bottom = 26;
+  const vals = pts.map(p => p.v);
+  const max = Math.max(...vals, 0), min = Math.min(...vals, 0), span = (max - min) || 1;
+  const x = mi => padX + (mi / 11) * (W - padX * 2);
+  const y = v => top + ((max - v) / span) * (H - top - bottom);
+  const y0 = y(0);
+  const last = pts[pts.length - 1];
+  const color = last.v >= 0 ? '#10b981' : '#ef4444';
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + x(p.mi).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  const area = line + ` L${x(last.mi).toFixed(1)} ${y0.toFixed(1)} L${x(pts[0].mi).toFixed(1)} ${y0.toFixed(1)} Z`;
+  const dots = pts.map(p => `<circle cx="${x(p.mi).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.2" fill="#fff" stroke="${color}" stroke-width="2"></circle>`).join('');
+  const labels = MS.map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${pts.some(p => p.mi === i) ? '#475569' : '#cbd5e1'}">${m}</text>`).join('');
+  const lx = Math.min(Math.max(x(last.mi), 36), W - 36);
+  const ly = last.v >= 0 ? y(last.v) - 9 : y(last.v) + 17;
+  return `<div class="glass-card overflow-hidden">
+    ${head}
+    <div style="padding-top:12px;padding-bottom:6px">
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('chartYearTitle', curYear)}">
+        <defs><linearGradient id="clArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.35"/><stop offset="1" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
+        <line x1="${padX}" x2="${W - padX}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#cbd5e1" stroke-dasharray="3 4"></line>
+        <path d="${area}" fill="url(#clArea)"></path>
+        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${dots}
+        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="800" fill="${last.v >= 0 ? '#047857' : '#b91c1c'}">${fmtBDT(last.v)}</text>
+        ${labels}
+      </svg>
+    </div>
+  </div>`;
+}
+
+const unlockedFields = new Set();
+const PEN_SVG = '<svg class="ico-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const CLOSE_SVG = '<svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+// An amount box: empty and editable until a value is saved; after that it is locked until the pen is tapped
+function lockBox(id, saved, cls, placeholder, extra) {
+  const has = saved !== '' && saved !== null && saved !== undefined && Number(saved) !== 0 && !isNaN(Number(saved));
+  const editing = has && unlockedFields.has(id);
+  const locked = has && !editing;
+  return `<div class="lock-wrap${extra ? ' ' + extra : ''}${editing ? ' is-editing' : ''}">
+    <input class="${cls}${locked ? ' is-locked' : ''}" id="${id}" type="number" inputmode="numeric" value="${has ? saved : ''}"${locked ? ' readonly' : ''} />
+    ${has ? `<button type="button" class="pen-btn" onclick="togglePen('${id}')" aria-label="${t('editLabel')}">${PEN_SVG}${CLOSE_SVG}</button>` : ''}
+  </div>`;
+}
+
+function togglePen(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const wrap = el.closest('.lock-wrap');
+  if (unlockedFields.has(id)) {            // second tap (X) = cancel, go back to the saved value
+    unlockedFields.delete(id);
+    el.value = el.defaultValue;
+    el.readOnly = true;
+    el.classList.add('is-locked');
+    wrap.classList.remove('is-editing');
+  } else {
+    unlockedFields.add(id);
+    el.readOnly = false;
+    el.classList.remove('is-locked');
+    wrap.classList.add('is-editing');
+    el.focus();
+    try { el.select(); } catch (e) {}
+  }
+}
+
+async function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  try { await deferredPrompt.userChoice; } catch (e) {}
+  deferredPrompt = null;
+  renderSettings();
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; renderSettings(); });
+window.addEventListener('appinstalled', () => { deferredPrompt = null; renderSettings(); });
+
 function renderAll() {
+  const typed = [];
+  document.querySelectorAll('.panel input[id]').forEach(el => {
+    if (el.id !== 'settings-url' && el.value !== el.defaultValue) typed.push([el.id, el.value]);
+  });
+  const ae = document.activeElement;
+  const activeId = ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) ? ae.id : '';
+  renderAllRaw();
+  typed.forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+  if (activeId && activeId !== 'settings-url') { const a = document.getElementById(activeId); if (a) a.focus(); }
+  applyPending();
+  runCountUps();
+  if (data && !firstRevealDone) {
+    firstRevealDone = true;
+    staggerIn(document.querySelector('.panel:not(.hidden)'));
+  }
+}
+
+function renderAllRaw() {
   applyStaticText();
   renderDashboard();
   renderProduction();
@@ -483,7 +962,8 @@ function renderAll() {
   renderSettings();
 }
 
-function emptyNotice() {
+function emptyNotice(kind) {
+  if (isLoading()) return kind === 'dashboard' ? skeletonDashboard() : skeletonCards(3);
   return `<div class="glass-card p-12 text-center text-slate-700 font-semibold text-sm my-6 border-dashed border-2 border-white/60">${t('emptyNotice')}</div>`;
 }
 
@@ -491,10 +971,10 @@ function pingDot() {
   return '<span class="ping-dot"><i class="ring"></i><i class="core"></i></span>';
 }
 
-function plMarkup(v) {
+function plMarkup(v, key) {
   const n = Number(v) || 0;
   const isPos = n >= 0;
-  return `<div class="pill-live pill-md${isPos ? ' green' : ''}">${pingDot()}${fmtBDT(n)}</div>`;
+  return `<div class="pill-live pill-md${isPos ? ' green' : ''}">${pingDot()}${cu(key || 'pl', n)}</div>`;
 }
 
 function liveBadge(size) {
@@ -519,7 +999,7 @@ function liveBadge(size) {
 
 function renderDashboard() {
   const el = document.getElementById('panel-dashboard');
-  if (!data) { el.innerHTML = emptyNotice(); return; }
+  if (!data) { el.innerHTML = emptyNotice('dashboard'); return; }
 
   const sum = (arr, key) => arr.reduce((s, x) => s + (Number(x[key]) || 0), 0);
   const p24 = sum(data.weeks, 'totalProfit');
@@ -548,27 +1028,29 @@ function renderDashboard() {
         <div class="kpi-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div class="bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner">
             <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${t('label24')}</div>
-            <div class="text-2xl font-black text-slate-100 tracking-tight">${fmtBDT(p24)}</div>
+            <div class="text-2xl font-black text-slate-100 tracking-tight">${cu('p24', p24)}</div>
           </div>
           <div class="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl relative shadow-inner">
             <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-1">${t('label4')}</div>
-            <div class="text-2xl font-black text-emerald-300 tracking-tight">${fmtBDT(p4)}</div>
+            <div class="text-2xl font-black text-emerald-300 tracking-tight">${cu('p4', p4)}</div>
             <span class="kpi-badge absolute top-3 right-3 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-extrabold">MY SHARE</span>
           </div>
           <div class="bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner">
             <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">${t('label2')}</div>
-            <div class="text-2xl font-black text-slate-100 tracking-tight">${fmtBDT(p2)}</div>
+            <div class="text-2xl font-black text-slate-100 tracking-tight">${cu('p2', p2)}</div>
           </div>
           <div class="bg-luxuryGold-400/10 border border-luxuryGold-400/30 p-5 rounded-2xl shadow-inner">
             <div class="text-[11px] font-bold text-luxuryGold-400 uppercase tracking-wider mb-1">${t('labelSingeingIncome', getCycleShortName())}</div>
-            <div class="text-2xl font-black text-luxuryGold-400 tracking-tight">${fmtBDT(singeingIncome)}</div>
+            <div class="text-2xl font-black text-luxuryGold-400 tracking-tight">${cu('sing', singeingIncome)}</div>
           </div>
           <div class="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl shadow-inner">
             <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-1">${t('labelCombinedIncome')}</div>
-            <div class="text-2xl font-black text-emerald-300 tracking-tight">${fmtBDT(combined)}</div>
+            <div class="text-2xl font-black text-emerald-300 tracking-tight">${cu('combined', combined)}</div>
           </div>
         </div>
       </div>
+
+      ${weeksChartHTML()}
 
       <div class="glass-card overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200/60 flex justify-between items-center bg-white/40">
@@ -577,15 +1059,15 @@ function renderDashboard() {
         <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/60">
           <div class="p-6">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">${t('labelYearIncome', yearLabel)}</div>
-            <div class="text-xl font-black text-brand-900">${fmtBDT(yearIncomeToDate)}</div>
+            <div class="text-xl font-black text-brand-900">${cu('yearInc', yearIncomeToDate)}</div>
           </div>
           <div class="p-6">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">${t('labelYearPL', yearLabel)}</div>
-            <div>${plMarkup(yearPL)}</div>
+            <div>${plMarkup(yearPL, 'yearPL')}</div>
           </div>
           <div class="p-6">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">${t('labelLifetimePL')}</div>
-            <div>${plMarkup(lifetimePL)}</div>
+            <div>${plMarkup(lifetimePL, 'lifePL')}</div>
           </div>
         </div>
       </div>
@@ -609,7 +1091,7 @@ function renderDashboard() {
             <input class="input-field w-full text-sm font-bold text-brand-900" id="assump-singeing" type="number" value="${data.assumptions.singeingRate}" />
           </div>
         </div>
-        <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" onclick="saveAssumptions()">${t('btnSaveAssump')}</button>
+        <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" data-save="assump" onclick="saveAssumptions()">${t('btnSaveAssump')}</button>
       </div>
     </div>`;
 }
@@ -618,7 +1100,10 @@ async function saveAssumptions() {
   const marketRate = Number(document.getElementById('assump-market').value) || 0;
   const totalMachines = Number(document.getElementById('assump-machines').value) || 0;
   const singeingRate = Number(document.getElementById('assump-singeing').value) || 0;
-  await pushAction({ action: 'updateAssumptions', marketRate, totalMachines, singeingRate });
+  await pushAction({ action: 'updateAssumptions', marketRate, totalMachines, singeingRate }, {
+    key: 'assump',
+    apply: () => { Object.assign(data.assumptions, { marketRate, totalMachines, singeingRate }); },
+  });
 }
 
 function renderProduction() {
@@ -633,23 +1118,22 @@ function renderProduction() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">তারিখ (Date)</label>
-          <input class="input-field text-sm font-semibold w-full" id="prod-date-${i}" placeholder="${t('datePlaceholder')}" value="" />
+          <input class="input-field text-sm font-semibold w-full" id="prod-date-${i}" value="" />
           ${w.date ? `<div class="saved-note">${t('savedLabel')} ${w.date}</div>` : ''}
         </div>
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">মোট পিস (Total Pieces)</label>
-          <input class="input-field text-sm font-semibold w-full" id="prod-pieces-${i}" type="number" inputmode="numeric" placeholder="${t('piecesPlaceholder')}" value="" />
-          ${Number(w.totalPieces) ? `<div class="saved-note">${t('savedLabel')} ${w.totalPieces}</div>` : ''}
+          ${lockBox('prod-pieces-' + i, w.totalPieces, 'input-field text-sm font-semibold w-full', t('piecesPlaceholder'))}
         </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs mb-5 bg-white/50 p-4 rounded-xl border border-slate-200/60">
         <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statThaan')}</span> <b class="text-brand-900 text-sm font-extrabold">${w.weeklyThaan}</b></div>
         <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statTotalProfit')}</span> <b class="text-brand-900 text-sm font-extrabold">${fmtBDT(w.totalProfit)}</b></div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statMyProfit')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.myProfit)}</b></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statMyProfit')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.myProfit)}</b>${i > 0 ? deltaChip(w.myProfit, data.weeks[i - 1].myProfit) : ''}</div>
         <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('stat2Machine')}</span> <b class="text-brand-900 text-sm font-extrabold">${fmtBDT(w.twoMachineProfit)}</b></div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statCombined')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.combinedProfit)}</b></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statCombined')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.combinedProfit)}</b>${i > 0 ? deltaChip(w.combinedProfit, data.weeks[i - 1].combinedProfit) : ''}</div>
       </div>
-      <button class="w-full glass-btn-primary font-bold text-xs py-3 rounded-xl" onclick="saveWeek(${i})">${t('btnSaveSheet')}</button>
+      <button class="w-full glass-btn-primary font-bold text-xs py-3 rounded-xl" data-save="week-${i}" onclick="saveWeek(${i})">${t('btnSaveSheet')}</button>
     </div>
   `).join('') + `</div>`;
 }
@@ -661,7 +1145,12 @@ async function saveWeek(i) {
   // A box left empty keeps the value already saved in the sheet (never overwritten with blank/0)
   const date = dateVal !== '' ? dateVal : (row.date || '');
   const totalPieces = piecesVal !== '' ? (Number(piecesVal) || 0) : (Number(row.totalPieces) || 0);
-  await pushAction({ action: 'updateWeek', weekIndex: i + 1, date, totalPieces });
+  await pushAction({ action: 'updateWeek', weekIndex: i + 1, date, totalPieces }, {
+    key: 'week-' + i,
+    clearIds: ['prod-date-' + i],
+    lockIds: ['prod-pieces-' + i],
+    apply: () => { row.date = date; row.totalPieces = totalPieces; },
+  });
 }
 
 function renderSingeing() {
@@ -672,11 +1161,10 @@ function renderSingeing() {
       <div>
         <div class="font-bold text-brand-900 text-base">${t('weekLabel', s.week)}</div>
         <div class="text-xs text-slate-600 font-medium mt-0.5">${s.date} · ${t('payLabel')} <span class="font-extrabold text-brand-900">${fmtBDT(s.pay)}</span></div>
-        ${Number(s.singedThaan) ? `<div class="saved-note">${t('savedLabel')} ${s.singedThaan}</div>` : ''}
       </div>
       <div class="flex gap-3 w-full sm:w-auto">
-        <input class="input-field text-sm font-bold w-full sm:w-36" id="sing-${i}" type="number" inputmode="numeric" placeholder="${t('singedPlaceholder')}" value="" />
-        <button class="glass-btn-primary font-bold text-xs px-6 py-2.5 rounded-xl whitespace-nowrap" onclick="saveSingeing(${i})">${t('btnSave')}</button>
+        ${lockBox('sing-' + i, s.singedThaan, 'input-field text-sm font-bold w-full', t('singedPlaceholder'), 'sing')}
+        <button class="glass-btn-primary font-bold text-xs px-6 py-2.5 rounded-xl whitespace-nowrap" data-save="sing-${i}" onclick="saveSingeing(${i})">${t('btnSave')}</button>
       </div>
     </div>
   `).join('') + `</div>`;
@@ -687,7 +1175,11 @@ async function saveSingeing(i) {
   const val = document.getElementById('sing-' + i).value.trim();
   // A box left empty keeps the value already saved in the sheet
   const singedThaan = val !== '' ? (Number(val) || 0) : (Number(row.singedThaan) || 0);
-  await pushAction({ action: 'updateSingeing', weekIndex: i + 1, singedThaan });
+  await pushAction({ action: 'updateSingeing', weekIndex: i + 1, singedThaan }, {
+    key: 'sing-' + i,
+    lockIds: ['sing-' + i],
+    apply: () => { row.singedThaan = singedThaan; },
+  });
 }
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -778,13 +1270,11 @@ function renderLifetime() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('labelInvestment')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inv" type="number" inputmode="numeric" value="" />
-            ${Number(cur.investment) ? `<div class="saved-note">${t('savedLabel')} ${fmtBDT(cur.investment)}</div>` : ''}
+            ${lockBox('life-cur-inv', cur.investment, 'input-field w-full text-sm font-bold text-brand-900', '')}
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('labelMonthlyIncome')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="life-cur-inc" type="number" inputmode="numeric" value="" />
-            ${Number(cur.monthlyIncome) ? `<div class="saved-note">${t('savedLabel')} ${fmtBDT(cur.monthlyIncome)}</div>` : ''}
+            ${lockBox('life-cur-inc', cur.monthlyIncome, 'input-field w-full text-sm font-bold text-brand-900', '')}
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600 mb-5 bg-white/50 p-4 rounded-xl border border-slate-200/60 font-medium">
@@ -792,7 +1282,7 @@ function renderLifetime() {
           <div>${t('statYearPL')} <b class="${Number(cur.profitLossYear) >= 0 ? 'text-finGreen-600' : 'text-finRed-600'} block text-sm font-extrabold mt-0.5">${fmtBDT(cur.profitLossYear)}</b></div>
           <div>${t('statLifetimePL')} <b class="${Number(cur.profitLossLifetime) >= 0 ? 'text-finGreen-600' : 'text-finRed-600'} block text-sm font-extrabold mt-0.5">${fmtBDT(cur.profitLossLifetime)}</b></div>
         </div>
-        <button class="w-full glass-btn-primary font-bold text-xs py-3 rounded-xl" onclick="saveCurrentLifetime(${curIndex})">${t('btnSaveSheet')}</button>
+        <button class="w-full glass-btn-primary font-bold text-xs py-3 rounded-xl" data-save="life" onclick="saveCurrentLifetime(${curIndex})">${t('btnSaveSheet')}</button>
       </div>
     </div>` : `<div class="glass-card p-6 text-center text-slate-600 text-sm mb-6">${t('notFoundMonth', curMonthName, curYear)}</div>`;
 
@@ -819,6 +1309,7 @@ function renderLifetime() {
 
   el.innerHTML = currentCardHtml + `
     <div class="space-y-6">
+      ${lifetimeChartHTML(curYear)}
       <div class="glass-card overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200/60 flex justify-between items-center bg-white/40">
           <h2 class="font-bold text-brand-900 text-sm tracking-wide uppercase">${t('yearTableTitle', curYear)}</h2>
@@ -870,11 +1361,16 @@ async function saveCurrentLifetime(i) {
   const monthlyIncome = incVal !== '' ? (Number(incVal) || 0) : (Number(row.monthlyIncome) || 0);
   const year = row.year;
   const month = row.month;
-  await pushAction({ action: 'updateLifetimeMonth', year, month, investment, monthlyIncome });
+  await pushAction({ action: 'updateLifetimeMonth', year, month, investment, monthlyIncome }, {
+    key: 'life',
+    lockIds: ['life-cur-inv', 'life-cur-inc'],
+    apply: () => { row.investment = investment; row.monthlyIncome = monthlyIncome; },
+  });
 }
 
 function renderSettings() {
   const el = document.getElementById('panel-settings');
+  if (document.activeElement && document.activeElement.id === 'settings-url') return;
   const msgMap = {
     'ok': '<span class="text-finGreen-600 font-bold flex items-center gap-1 mt-3 text-xs">' + t('syncMsgOk') + '</span>',
     'error': '<span class="text-finRed-600 font-bold flex items-center gap-1 mt-3 text-xs">' + t('syncMsgError') + '</span>',
@@ -888,11 +1384,18 @@ function renderSettings() {
         <h2 class="font-bold text-brand-900 text-base mb-1">${t('settingsTitle')}</h2>
         <p class="text-xs text-slate-600 mb-4 font-medium">${t('settingsDesc')}</p>
         <div class="mb-4">
-          <input class="input-field w-full text-xs font-mono text-brand-900" id="settings-url" placeholder="${t('urlPlaceholder')}" value="${scriptUrl}" />
+          <input class="input-field w-full text-xs font-mono text-brand-900" id="settings-url" value="${scriptUrl}" />
           ${msgMap[syncStatus] || ''}
+          ${lastSync ? `<div class="saved-note">${t('lastSync', fmtTime(lastSync))}</div>` : ''}
         </div>
         <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" onclick="saveSettings()">${t('btnSaveSettings')}</button>
       </div>
+
+      ${deferredPrompt ? `<div class="glass-card p-6 border-l-4 border-l-brand-600">
+        <h2 class="font-bold text-brand-900 text-base mb-1">${t('installTitle')}</h2>
+        <p class="text-xs text-slate-600 mb-4 font-medium">${t('installDesc')}</p>
+        <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" onclick="installApp()">${t('installBtn')}</button>
+      </div>` : ''}
 
       <div class="glass-card p-6 border-l-4 border-l-luxuryGold-500">
         <h2 class="font-bold text-brand-900 text-base mb-1">${t('languageTitle')}</h2>
@@ -919,11 +1422,26 @@ function setLanguage(l) {
 }
 
 applyStaticText();
-renderSettings();
 if (scriptUrl) {
-  fetchFromSheet();
+  const cached = loadCache();
+  if (cached) { data = cached.data; lastSync = cached.t || 0; }
+  fetchFromSheet();      // starts syncing right away (status becomes "syncing" synchronously)
+  renderAll();           // cached numbers instantly, or loading skeletons when there is no cache yet
+  if (data) hideSplashSoon();
 } else {
   renderAll();
+  hideSplashSoon();
+}
+updateOnlineBar();
+setTimeout(hideSplashSoon, 3000);
+
+window.addEventListener('online', () => { updateOnlineBar(); if (scriptUrl) fetchFromSheet(); });
+window.addEventListener('offline', updateOnlineBar);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && scriptUrl && navigator.onLine && Date.now() - lastSync > 60000) fetchFromSheet();
+});
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }
 </script>
 </body>
