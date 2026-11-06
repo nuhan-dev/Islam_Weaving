@@ -5,12 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>ইসলাম উইভিং ফ্যাক্টরি — এক্সিকিউটিভ হিসাব খাতা</title>
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#0b1329" />
+<meta name="theme-color" content="#fffaf0" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Islam Weaving" />
 <link rel="apple-touch-icon" href="icon-v4-192.png" />
+<link rel="icon" type="image/png" href="logo-v4.png" />
+<script>
+// Start the sheet request as early as possible (before the rest of the page is parsed)
+(function () {
+  try {
+    var u = localStorage.getItem('appsScriptUrl');
+    if (u && navigator.onLine !== false) {
+      var p = fetch(u, { cache: 'no-store' }).then(function (r) { return r.json(); });
+      p.catch(function () {});
+      window.__early = { t: Date.now(), p: p };
+    }
+  } catch (e) {}
+})();
+</script>
 <link rel="preconnect" href="https://script.google.com" crossorigin />
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -333,6 +347,87 @@
     .panel:not(.hidden), .reveal, .skel, .skel-dark, #splash .splash-bar i { animation: none; }
   }
 </style>
+<style>
+  /* ===== Light theme (cream · gold · mint) — overrides the earlier dark styles ===== */
+  body {
+    background-color: #faf3e3;
+    color: #2b2112;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.20) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.16) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.14) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Header */
+  .app-header {
+    background: rgba(255, 251, 240, 0.92);
+    border-bottom: 1px solid rgba(190, 150, 70, 0.28);
+    box-shadow: 0 10px 28px -16px rgba(120, 90, 30, 0.35);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    color: #2b2112;
+  }
+  .app-header #hdrTitle { color: #2b2112; }
+  .app-header #hdrSubtitle { color: #8a7a5a; }
+  .app-header img { border: 1px solid rgba(214, 180, 100, 0.7); box-shadow: 0 4px 12px rgba(120, 90, 30, 0.25); }
+
+  /* Tabs */
+  .tabbar { background: rgba(255, 251, 240, 0.7); border-bottom: 1px solid rgba(190, 150, 70, 0.22); box-shadow: none; }
+  .glass-nav-btn {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(214, 180, 100, 0.45);
+    color: #6b5b3a;
+    box-shadow: 0 2px 8px rgba(120, 90, 30, 0.10);
+  }
+  .glass-nav-btn:hover { background: #ffffff; border-color: rgba(214, 170, 70, 0.85); color: #3f2f0f; }
+  .glass-nav-btn.active {
+    background: linear-gradient(135deg, #fde8a8, #f4c75c);
+    border-color: #e0a63f; color: #5b3a05;
+    box-shadow: 0 6px 16px rgba(224, 166, 63, 0.35);
+  }
+  @media (max-width: 767px) {
+    .tabbar {
+      background: rgba(255, 251, 240, 0.96);
+      border-top: 1px solid rgba(190, 150, 70, 0.3); border-bottom: 0;
+      box-shadow: 0 -10px 30px rgba(120, 90, 30, 0.14);
+    }
+    .tabbar .nav-tab { color: #8a7a5a; background: transparent; border: 0; box-shadow: none; }
+    .tabbar .nav-tab:hover { background: transparent; color: #5b3a05; }
+    .tabbar .nav-tab.active { background: rgba(245, 158, 11, 0.20); color: #b45309; box-shadow: none; }
+  }
+
+  /* Cards on the cream background */
+  .glass-card {
+    border-color: rgba(214, 180, 100, 0.38);
+    box-shadow: 0 14px 30px -18px rgba(120, 90, 30, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  /* Hero (production profit) */
+  .fintech-hero {
+    background: linear-gradient(160deg, #fffdf7 0%, #fcf4df 100%);
+    border: 1px solid rgba(214, 180, 100, 0.5);
+    box-shadow: 0 18px 36px -18px rgba(120, 90, 30, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    color: #2b2112;
+  }
+  .fintech-hero .hero-title { color: #2b2112; }
+  .fintech-hero .hero-head { border-bottom-color: rgba(190, 150, 70, 0.28); }
+  .fintech-hero .cycle-chip { background: rgba(255, 255, 255, 0.8); border-color: rgba(214, 180, 100, 0.5); box-shadow: 0 2px 8px rgba(120, 90, 30, 0.08); }
+  .fintech-hero .cycle-month, .month-glow { color: #2b2112; }
+  .fintech-hero .cycle-sep { color: #b8a171; }
+
+  .fintech-hero .kpi-grid > div { background: #ffffff; border: 1px solid rgba(214, 180, 100, 0.4); box-shadow: 0 8px 18px -12px rgba(120, 90, 30, 0.4); }
+  .fintech-hero .kpi-grid > div:nth-child(2),
+  .fintech-hero .kpi-grid > div:nth-child(5) { background: linear-gradient(160deg, #f4fdf8, #e1f7ec); border-color: rgba(16, 185, 129, 0.42); }
+  .fintech-hero .kpi-grid > div:nth-child(4) { background: linear-gradient(160deg, #fffaf0, #fdf0cc); border-color: rgba(224, 166, 63, 0.55); }
+  .fintech-hero .text-slate-400 { color: #7a6a4a; }
+  .fintech-hero .text-slate-100 { color: #1f2937; }
+  .fintech-hero .text-emerald-400 { color: #047857; }
+  .fintech-hero .text-emerald-300 { color: #059669; }
+  .fintech-hero .text-luxuryGold-400 { color: #b45309; }
+  .fintech-hero .kpi-badge { background: rgba(16, 185, 129, 0.14); color: #047857; border-color: rgba(16, 185, 129, 0.45); }
+  .fintech-hero .skel-dark { background: linear-gradient(90deg, rgba(214, 180, 100, 0.14), rgba(214, 180, 100, 0.34), rgba(214, 180, 100, 0.14)); background-size: 200% 100%; }
+</style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 <div id="splash" aria-hidden="true">
@@ -346,7 +441,7 @@
 <header class="app-header bg-brand-950/80 text-white border-b border-white/10 shadow-2xl">
   <div class="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center gap-3">
     <div class="hdr-left flex items-center gap-3.5">
-      <img src="icon-v2-192.png" alt="Logo" class="w-11 h-11 rounded-2xl shadow-lg border border-white/30 object-cover" />
+      <img src="logo-v4.png" alt="Islam Weaving" width="44" height="44" class="w-11 h-11 rounded-2xl shadow-lg border border-white/30 object-cover" />
       <div class="hdr-text">
         <h1 class="font-serif text-lg sm:text-xl text-slate-50 font-bold leading-tight" id="hdrTitle"></h1>
         <p class="text-[11px] text-slate-400 font-medium" id="hdrSubtitle"></p>
@@ -564,6 +659,9 @@ function setSyncStatus(status) {
   btnEl.className = 'rounded-full px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-lg transition ' + style.btn;
   dotEl.className = 'status-dot-breathe inline-flex rounded-full h-2.5 w-2.5 ' + style.dot;
 
+  if (status === 'syncing') startCuTicker();
+  else if (stopCuTicker()) runCountUps(true);
+
   renderSettings();
 }
 
@@ -601,10 +699,33 @@ function applyData(json) {
   data = json;
   lastSync = Date.now();
   saveCache();
-  setSyncStatus('ok');
   renderAll();
+  setSyncStatus('ok');
   updateOnlineBar();
   hideSplashSoon();
+}
+
+let earlyUsed = false;
+
+// First try; if it fails fast, retry at once. If it is slow (>3.5s) start a second request in parallel and take whichever answers first.
+function fetchJsonHedged() {
+  return new Promise((resolve, reject) => {
+    let finished = false, launched = 0, failed = 0, hedgeTimer = null;
+    const finish = (fn, v) => { if (finished) return; finished = true; clearTimeout(hedgeTimer); fn(v); };
+    const launch = () => {
+      if (finished || launched >= 2) return;
+      launched++;
+      fetchWithTimeout(scriptUrl, { cache: 'no-store' }, 15000)
+        .then(r => r.json())
+        .then(j => { if (!validData(j)) throw new Error('bad data'); finish(resolve, j); })
+        .catch(e => {
+          failed++;
+          if (failed >= launched) { if (launched < 2) launch(); else finish(reject, e); }
+        });
+    };
+    launch();
+    hedgeTimer = setTimeout(launch, 3500);
+  });
 }
 
 function fetchFromSheet() {
@@ -619,22 +740,25 @@ function fetchFromSheet() {
   }
   setSyncStatus('syncing');
   inflight = (async () => {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const r = await fetchWithTimeout(scriptUrl, { cache: 'no-store' }, 15000);
-        const json = await r.json();
-        if (!validData(json)) throw new Error('bad data');
-        applyData(json);
-        return true;
-      } catch (e) {
-        if (attempt === 0) await sleep(500);
+    try {
+      let json = null;
+      if (!earlyUsed && window.__early && Date.now() - window.__early.t < 20000) {
+        earlyUsed = true;
+        try {
+          json = await Promise.race([window.__early.p, new Promise(res => setTimeout(() => res(null), 3500))]);
+          if (!validData(json)) json = null;
+        } catch (e) { json = null; }
       }
+      if (!json) json = await fetchJsonHedged();
+      applyData(json);
+      return true;
+    } catch (e) {
+      setSyncStatus('error');
+      if (!data) renderAll();
+      updateOnlineBar();
+      hideSplashSoon();
+      return false;
     }
-    setSyncStatus('error');
-    if (!data) renderAll();
-    updateOnlineBar();
-    hideSplashSoon();
-    return false;
   })().finally(() => { inflight = null; });
   return inflight;
 }
@@ -722,7 +846,7 @@ function updateOnlineBar() {
 function hideSplashSoon() {
   if (splashHidden) return;
   splashHidden = true;
-  const wait = Math.max(0, 650 - (Date.now() - splashStart));
+  const wait = Math.max(0, 450 - (Date.now() - splashStart));
   setTimeout(() => {
     const sp = document.getElementById('splash');
     if (sp) { sp.classList.add('out'); setTimeout(() => sp.remove(), 700); }
@@ -741,17 +865,47 @@ function splashVisible() {
   return !!sp && !sp.classList.contains('out');
 }
 
-// force = true: count up from 0 (used when the dashboard is shown). Otherwise only animate numbers that changed.
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const cuCur = {};          // last number shown while rolling, per key
+let cuTicker = null;
+
+// While syncing, the amounts keep "rolling" (random numbers around the real value)
+function tickCu() {
+  if (splashVisible()) return;
+  document.querySelectorAll('.cu').forEach(el => {
+    if (el.closest('.panel.hidden')) return;
+    const target = Number(el.dataset.v) || 0;
+    if (!target) return;
+    const v = Math.round(target * (0.35 + Math.random() * 1.25));
+    cuCur[el.dataset.k] = v;
+    el.textContent = fmtBDT(v);
+  });
+}
+function startCuTicker() {
+  if (cuTicker || reduceMotion()) return;
+  cuTicker = setInterval(tickCu, 90);
+}
+function stopCuTicker() {
+  if (!cuTicker) return false;
+  clearInterval(cuTicker);
+  cuTicker = null;
+  return true;
+}
+
+// force = true: count to the real value (from the last rolling number, or from 0)
 function runCountUps(force) {
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (splashVisible()) return;   // the splash covers the screen — start counting once it fades out
+  if (splashVisible() || cuTicker) return;   // splash covers the screen / still rolling
+  const reduce = reduceMotion();
   document.querySelectorAll('.cu').forEach(el => {
     const key = el.dataset.k;
     const target = Number(el.dataset.v) || 0;
     const hiddenPanel = !!el.closest('.panel.hidden');
-    const from = (force || cuMemory[key] === undefined) ? 0 : cuMemory[key];
+    let from;
+    if (force) from = cuCur[key] !== undefined ? cuCur[key] : 0;
+    else from = cuMemory[key] === undefined ? 0 : cuMemory[key];
+    delete cuCur[key];
     cuMemory[key] = target;
-    if (reduce || hiddenPanel || from === target) return;
+    if (reduce || hiddenPanel || from === target) { el.textContent = fmtBDT(target); return; }
     const start = performance.now();
     const dur = 700;
     el.textContent = fmtBDT(from);
@@ -957,7 +1111,7 @@ function renderAll() {
   typed.forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
   if (activeId && activeId !== 'settings-url') { const a = document.getElementById(activeId); if (a) a.focus(); }
   applyPending();
-  runCountUps();
+  if (cuTicker) tickCu(); else runCountUps();
   if (data && !firstRevealDone) {
     firstRevealDone = true;
     staggerIn(document.querySelector('.panel:not(.hidden)'));
