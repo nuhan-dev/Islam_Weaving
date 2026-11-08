@@ -428,6 +428,38 @@
   .fintech-hero .kpi-badge { background: rgba(16, 185, 129, 0.14); color: #047857; border-color: rgba(16, 185, 129, 0.45); }
   .fintech-hero .skel-dark { background: linear-gradient(90deg, rgba(214, 180, 100, 0.14), rgba(214, 180, 100, 0.34), rgba(214, 180, 100, 0.14)); background-size: 200% 100%; }
 </style>
+<style>
+  /* ===== Floating colourful tab bar (phones) + recovery summary ===== */
+  @keyframes tab-pop { 0% { transform: scale(0.85); } 60% { transform: scale(1.22); } 100% { transform: scale(1.12); } }
+
+  .recov { padding: 16px 24px 4px; }
+  .recov-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .recov-top b { font-size: 14px; font-weight: 800; color: #1e293b; }
+  .recov-top span { font-size: 11px; font-weight: 700; color: #64748b; }
+  .recov-bar { height: 11px; border-radius: 9999px; background: rgba(148, 163, 184, 0.28); overflow: hidden; }
+  .recov-bar i { display: block; height: 100%; min-width: 6px; border-radius: 9999px; background: linear-gradient(90deg, #fbbf24, #34d399); transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .recov-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 10px; }
+  .recov-eta { font-size: 11px; font-weight: 700; color: #64748b; }
+  .chart-chip { text-align: center; padding: 2px 0 8px; }
+
+  @media (max-width: 767px) {
+    .tabbar {
+      left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom));
+      padding: 6px; border-radius: 28px;
+      background: rgba(255, 252, 244, 0.95);
+      border: 1px solid rgba(214, 180, 100, 0.5);
+      box-shadow: 0 16px 36px -10px rgba(120, 90, 30, 0.5), 0 2px 10px rgba(120, 90, 30, 0.14);
+    }
+    .tabbar-nav { max-width: 26rem; margin: 0 auto; }
+    .tabbar .nav-tab { border-radius: 22px; padding: 7px 2px 6px; font-size: 10.5px; font-weight: 800; color: #7c6c4a; }
+    .tabbar .nav-tab .tab-ico { width: 26px; height: 26px; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 2px 3px rgba(120, 90, 30, 0.25)); }
+    .tabbar .nav-tab.active { background: linear-gradient(135deg, #fff1c4, #ffe08a); color: #7a3f04; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 6px 14px -6px rgba(217, 119, 6, 0.55); }
+    .tabbar .nav-tab.active .tab-ico { transform: scale(1.12); animation: tab-pop 0.4s ease both; }
+    .app-main { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+    #toast { bottom: calc(104px + env(safe-area-inset-bottom)); }
+  }
+  @media (prefers-reduced-motion: reduce) { .tabbar .nav-tab.active .tab-ico { animation: none; } }
+</style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 <div id="splash" aria-hidden="true">
@@ -514,6 +546,17 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'সেভ করা আছে:',
     editLabel: 'এডিট করুন',
+    chartYearSub: 'প্রতি মাসের শেষে মোট লাভ/ক্ষতি — ওঠানামা বোঝাতে স্কেল বড় করে দেখানো হয়েছে',
+    recoveredTitle: (p) => `বিনিয়োগের ${p}% ফেরত এসেছে`,
+    recoveredOf: (a, b) => `${a} / ${b}`,
+    remainingLabel: (v) => `ব্রেক-ইভেনে আরও ${v} বাকি`,
+    etaLabel: (txt) => `এই গড় আয়ে আনুমানিক ${txt} পরে ব্রেক-ইভেন`,
+    passedBreakEven: (v) => `ব্রেক-ইভেন পার হয়েছে — মোট লাভ ${v}`,
+    improvedLabel: (v) => `▲ লস কমেছে ${v}`,
+    worsenedLabel: (v) => `▼ লস বেড়েছে ${v}`,
+    breakEvenTop: '↑ ৳0 ব্রেক-ইভেন',
+    breakEvenLine: '৳0 ব্রেক-ইভেন',
+    unitYear: 'বছর', unitMonth: 'মাস',
     toastSaved: 'সেভ হয়েছে ✓',
     toastFailed: 'সেভ হয়নি — আবার চেষ্টা করুন',
     toastOffline: 'ইন্টারনেট নেই — সেভ করা যায়নি',
@@ -567,6 +610,17 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'Saved:',
     editLabel: 'Edit',
+    chartYearSub: 'Total profit / loss at each month end — scale zoomed in to show the movement',
+    recoveredTitle: (p) => `${p}% of the investment recovered`,
+    recoveredOf: (a, b) => `${a} / ${b}`,
+    remainingLabel: (v) => `${v} left to break even`,
+    etaLabel: (txt) => `At this average income, break-even in about ${txt}`,
+    passedBreakEven: (v) => `Break-even passed — total profit ${v}`,
+    improvedLabel: (v) => `▲ Loss reduced by ${v}`,
+    worsenedLabel: (v) => `▼ Loss increased by ${v}`,
+    breakEvenTop: '↑ ৳0 break-even',
+    breakEvenLine: '৳0 break-even',
+    unitYear: 'yr', unitMonth: 'mo',
     toastSaved: 'Saved ✓',
     toastFailed: 'Could not save — please try again',
     toastOffline: 'No internet — could not save',
@@ -600,11 +654,11 @@ function fmtBDT(n) {
 }
 
 const TAB_ICONS = {
-  dashboard:  '<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-  production: '<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V10l6 4v-4l6 4V4h6v17z"/><path d="M7 21v-3M12 21v-3M17 21v-3"/></svg>',
-  singeing:   '<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c.8 3.2 5 5.2 5 10a5 5 0 0 1-10 0c0-2 1-3.2 2.2-4.2.1 1.8.9 2.7 1.9 3C10.2 8 10.6 5.2 12 3z"/></svg>',
-  lifetime:   '<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg>',
-  settings:   '<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.2" fill="currentColor"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.2" fill="currentColor"/></svg>',
+  dashboard: '<svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ti1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><linearGradient id="ti2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#059669"/></linearGradient><linearGradient id="ti3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#e11d48"/></linearGradient><linearGradient id="ti4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#93c5fd"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs><rect x="3" y="3" width="8" height="8" rx="2.6" fill="url(#ti1)"/><rect x="13" y="3" width="8" height="8" rx="2.6" fill="url(#ti2)"/><rect x="3" y="13" width="8" height="8" rx="2.6" fill="url(#ti3)"/><rect x="13" y="13" width="8" height="8" rx="2.6" fill="url(#ti4)"/></svg>',
+  production: '<svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="tp1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#0f766e"/></linearGradient><linearGradient id="tp2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fcd34d"/><stop offset="1" stop-color="#d97706"/></linearGradient></defs><rect x="15.5" y="3" width="4" height="9" rx="1.2" fill="url(#tp2)"/><path d="M3 21V10.2a.9.9 0 0 1 1.4-.75L9 12.4v-2.2a.9.9 0 0 1 1.4-.75L15 12.4V21z" fill="url(#tp1)"/><rect x="3" y="14" width="18" height="7" rx="1.6" fill="url(#tp1)"/><rect x="5.6" y="16.2" width="2.6" height="2.6" rx=".7" fill="#fff" opacity=".9"/><rect x="10.7" y="16.2" width="2.6" height="2.6" rx=".7" fill="#fff" opacity=".9"/><rect x="15.8" y="16.2" width="2.6" height="2.6" rx=".7" fill="#fff" opacity=".9"/></svg>',
+  singeing: '<svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="tf1" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#fb923c"/><stop offset="1" stop-color="#e11d48"/></linearGradient></defs><path d="M12.3 2.2c.5 3.6 5.7 5.5 5.7 10.9A6 6 0 0 1 6 13.1c0-2.4 1.2-3.9 2.7-5 .1 2 1 3.2 2.2 3.5C10.6 8.3 11 5 12.3 2.2z" fill="url(#tf1)"/><path d="M12 21a3.1 3.1 0 0 1-3.1-3.1c0-1.9 1.6-2.9 2.4-4.6.8 1 1.2 1.7 1.9 2.4.5-.6.6-1.1.6-1.7 1 .9 1.3 2 1.3 3.2A3.1 3.1 0 0 1 12 21z" fill="#fff7c2" opacity=".95"/></svg>',
+  lifetime: '<svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="tl1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#2563eb"/></linearGradient><linearGradient id="tl2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#059669"/></linearGradient><linearGradient id="tl3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><rect x="3" y="13.5" width="4.6" height="7.5" rx="1.5" fill="url(#tl1)"/><rect x="9.7" y="9.5" width="4.6" height="11.5" rx="1.5" fill="url(#tl2)"/><rect x="16.4" y="5.5" width="4.6" height="15.5" rx="1.5" fill="url(#tl3)"/><path d="M3.6 9.6 9.2 5.2l3.4 2.6 6-4.4" fill="none" stroke="#f43f5e" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 3.1h3.1v3.1" fill="none" stroke="#f43f5e" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  settings: '<svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ts1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#7c3aed"/></linearGradient><linearGradient id="ts2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9a8d4"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs><rect x="3" y="5.8" width="18" height="3.2" rx="1.6" fill="#cbd5e1"/><rect x="3" y="15" width="18" height="3.2" rx="1.6" fill="#cbd5e1"/><circle cx="8.6" cy="7.4" r="3.6" fill="url(#ts1)"/><circle cx="8.6" cy="7.4" r="1.2" fill="#fff" opacity=".9"/><circle cx="15.6" cy="16.6" r="3.6" fill="url(#ts2)"/><circle cx="15.6" cy="16.6" r="1.2" fill="#fff" opacity=".9"/></svg>',
 };
 
 function setTabLabel(tab, key) {
@@ -794,6 +848,7 @@ async function pushAction(action, opts) {
     }, 20000);
     let json = null;
     try { json = await res.json(); } catch (e) {}
+    if (json && json.ok === false) throw new Error(json.error || 'save failed');   // the sheet script reported an error
     if (validData(json)) applyData(json); else await fetchFromSheet();
     showToast(t('toastSaved'), 'ok');
     haptic(30);
@@ -1007,47 +1062,105 @@ function weeksChartHTML() {
   </div>`;
 }
 
+function etaText(months) {
+  const y = Math.floor(months / 12), m = months % 12;
+  const parts = [];
+  if (y) parts.push(localDigits(y) + ' ' + t('unitYear'));
+  if (m || !y) parts.push(localDigits(m) + ' ' + t('unitMonth'));
+  return parts.join(' ');
+}
+
 function lifetimeChartHTML(curYear) {
   const MS = lang === 'bn'
     ? ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const nowMonth = new Date().getMonth();
+  const nowD = new Date();
+  const nowKey = nowD.getFullYear() * 12 + nowD.getMonth();
+  const keyOf = r => Number(r.year) * 12 + MONTH_NAMES.indexOf(r.month);
+  const hasNum = v => v !== '' && v !== null && v !== undefined && !isNaN(Number(v));
+
+  // --- recovery summary (lifetime) ---
+  const upto = data.lifetime.filter(r => MONTH_NAMES.indexOf(r.month) >= 0 && keyOf(r) <= nowKey);
+  const withData = upto.filter(r => hasNum(r.cumInvestLifetime) && hasNum(r.cumIncomeLifetime) && Number(r.cumInvestLifetime) > 0);
+  const lastRow = withData[withData.length - 1];
+  let summary = '';
+  if (lastRow) {
+    const invest = Number(lastRow.cumInvestLifetime);
+    const income = Number(lastRow.cumIncomeLifetime);
+    const pct = Math.max(0, Math.min(100, (income / invest) * 100));
+    const remaining = Math.max(0, invest - income);
+    const incomes = upto.map(r => Number(r.monthlyIncome)).filter(v => v > 0);
+    const avg = incomes.length ? incomes.reduce((x, y) => x + y, 0) / incomes.length : 0;
+    const eta = remaining > 0 && avg > 0 ? Math.ceil(remaining / avg) : null;
+    const pctTxt = localDigits(pct.toFixed(1).replace(/\.0$/, ''));
+    summary = `<div class="recov">
+      <div class="recov-top"><b>${t('recoveredTitle', pctTxt)}</b><span>${t('recoveredOf', fmtBDT(income), fmtBDT(invest))}</span></div>
+      <div class="recov-bar"><i style="width:${pct.toFixed(1)}%"></i></div>
+      <div class="recov-meta">
+        ${remaining > 0 ? `<span class="delta down" style="margin-left:0">${t('remainingLabel', fmtBDT(remaining))}</span>` : `<span class="delta up" style="margin-left:0">${t('passedBreakEven', fmtBDT(income - invest))}</span>`}
+        ${eta ? `<span class="recov-eta">${t('etaLabel', etaText(eta))}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // --- zoomed trend for this year ---
   const pts = [];
   data.lifetime.forEach(r => {
-    if (Number(r.year) !== curYear || r.profitLossYear === '' || r.profitLossYear === null || r.profitLossYear === undefined) return;
+    if (Number(r.year) !== curYear || !hasNum(r.profitLossYear)) return;
     const mi = MONTH_NAMES.indexOf(r.month);
-    if (mi < 0 || mi > nowMonth) return;
-    pts.push({ mi, v: Number(r.profitLossYear) || 0 });
+    if (mi < 0 || keyOf(r) > nowKey) return;
+    pts.push({ mi, v: Number(r.profitLossYear) });
   });
-  const head = chartHead(t('chartYearTitle', localDigits(curYear)), '');
-  if (pts.length < 2) return `<div class="glass-card overflow-hidden">${head}<div class="chart-note">${t('chartNeedMore')}</div></div>`;
+  const head = chartHead(t('chartYearTitle', localDigits(curYear)), t('chartYearSub'));
+  if (pts.length < 2) return `<div class="glass-card overflow-hidden">${head}${summary}<div class="chart-note">${t('chartNeedMore')}</div></div>`;
 
-  const W = 320, H = 176, padX = 16, top = 30, bottom = 26;
+  const W = 320, H = 196, padX = 18, top = 36, bottom = 28;
   const vals = pts.map(p => p.v);
-  const max = Math.max(...vals, 0), min = Math.min(...vals, 0), span = (max - min) || 1;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi === lo) { lo -= 1; hi += 1; }
+  const span = hi - lo;
+  const yMin = lo - span * 0.30, yMax = hi + span * 0.55;
+  const plotH = H - top - bottom;
+  const y = v => top + ((yMax - v) / (yMax - yMin)) * plotH;
   const x = mi => padX + (mi / 11) * (W - padX * 2);
-  const y = v => top + ((max - v) / span) * (H - top - bottom);
-  const y0 = y(0);
-  const last = pts[pts.length - 1];
-  const color = last.v >= 0 ? '#10b981' : '#ef4444';
+  const first = pts[0], last = pts[pts.length - 1];
+  const improved = last.v >= first.v;
+  const color = improved ? '#10b981' : '#ef4444';
+  const base = y(yMin);
   const line = pts.map((p, i) => (i ? 'L' : 'M') + x(p.mi).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
-  const area = line + ` L${x(last.mi).toFixed(1)} ${y0.toFixed(1)} L${x(pts[0].mi).toFixed(1)} ${y0.toFixed(1)} Z`;
-  const dots = pts.map(p => `<circle cx="${x(p.mi).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.2" fill="#fff" stroke="${color}" stroke-width="2"></circle>`).join('');
+  const area = line + ` L${x(last.mi).toFixed(1)} ${base.toFixed(1)} L${x(first.mi).toFixed(1)} ${base.toFixed(1)} Z`;
+  const dots = pts.map((p, i) => `<circle cx="${x(p.mi).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === pts.length - 1 ? 4.6 : 3}" fill="#fff" stroke="${color}" stroke-width="2.2"></circle>`).join('');
   const labels = MS.map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${pts.some(p => p.mi === i) ? '#475569' : '#cbd5e1'}">${m}</text>`).join('');
-  const lx = Math.min(Math.max(x(last.mi), 36), W - 36);
-  const ly = last.v >= 0 ? y(last.v) - 9 : y(last.v) + 17;
+
+  let zero;
+  if (0 >= yMin && 0 <= yMax) {
+    zero = `<line x1="${padX}" x2="${W - padX}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="#10b981" stroke-dasharray="4 4" opacity="0.7"></line>`
+         + `<text x="${W - padX}" y="${(y(0) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="800" fill="#047857">${t('breakEvenLine')}</text>`;
+  } else {
+    zero = `<text x="${W - padX}" y="15" text-anchor="end" font-size="9.5" font-weight="800" fill="#047857">${t('breakEvenTop')}</text>`;
+  }
+
+  const clampX = v => Math.min(Math.max(v, 44), W - 44);
+  const firstLabel = `<text x="${clampX(x(first.mi)).toFixed(1)}" y="${(y(first.v) + 18).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#64748b">${fmtBDT(first.v)}</text>`;
+  const lastLabel = `<text x="${clampX(x(last.mi)).toFixed(1)}" y="${(y(last.v) - 11).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="${improved ? '#047857' : '#b91c1c'}">${fmtBDT(last.v)}</text>`;
+
+  const diff = last.v - first.v;
+  const trendChip = Math.abs(diff) >= 1
+    ? `<div class="chart-chip"><span class="delta ${diff > 0 ? 'up' : 'down'}" style="margin-left:0">${diff > 0 ? t('improvedLabel', fmtBDT(diff)) : t('worsenedLabel', fmtBDT(Math.abs(diff)))}</span></div>`
+    : '';
+
   return `<div class="glass-card overflow-hidden">
     ${head}
-    <div style="padding-top:12px;padding-bottom:6px">
+    ${summary}
+    <div style="padding-top:8px;padding-bottom:6px">
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('chartYearTitle', curYear)}">
-        <defs><linearGradient id="clArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.35"/><stop offset="1" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
-        <line x1="${padX}" x2="${W - padX}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#cbd5e1" stroke-dasharray="3 4"></line>
+        <defs><linearGradient id="clArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.32"/><stop offset="1" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
+        ${zero}
         <path d="${area}" fill="url(#clArea)"></path>
-        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
-        ${dots}
-        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10" font-weight="800" fill="${last.v >= 0 ? '#047857' : '#b91c1c'}">${fmtBDT(last.v)}</text>
-        ${labels}
+        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${dots}${firstLabel}${lastLabel}${labels}
       </svg>
+      ${trendChip}
     </div>
   </div>`;
 }
