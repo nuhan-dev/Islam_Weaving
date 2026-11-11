@@ -460,6 +460,19 @@
   }
   @media (prefers-reduced-motion: reduce) { .tabbar .nav-tab.active .tab-ico { animation: none; } }
 </style>
+<style>
+  /* ===== Report card ===== */
+  .rep-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .rep-ico { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 13px; letter-spacing: 0.5px; color: #fff; background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 6px 14px -6px rgba(220, 38, 38, 0.6); }
+  .rep-lang { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .rep-lang span { font-size: 11px; font-weight: 800; color: #7a6a4a; margin-right: 4px; }
+  .rep-chip { padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 800; color: #6b5b3a; background: #ffffff; border: 1px solid rgba(214, 180, 100, 0.6); transition: transform 0.12s ease; }
+  .rep-chip:active { transform: scale(0.95); }
+  .rep-chip.on { color: #5b3a05; background: linear-gradient(135deg, #fde8a8, #f4c75c); border-color: #e0a63f; }
+  .rep-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .rep-share { padding: 12px 22px; border-radius: 12px; font-size: 12px; font-weight: 800; color: #0a553f; background: #ffffff; border: 1px solid #6fcfa6; }
+  .rep-share.btn-loading::before { border-color: rgba(10, 85, 63, 0.3); border-top-color: #0a553f; }
+</style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 <div id="splash" aria-hidden="true">
@@ -546,6 +559,14 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'সেভ করা আছে:',
     editLabel: 'এডিট করুন',
+    reportTitle: 'মাসিক রিপোর্ট (PDF)',
+    reportDesc: 'মাস শেষে, শিটের তারিখ বদলানোর আগে ডাউনলোড করে রাখুন।',
+    reportLangLabel: 'রিপোর্টের ভাষা',
+    reportDownload: 'PDF ডাউনলোড',
+    reportShare: 'শেয়ার করুন',
+    reportSaved: 'PDF ডাউনলোড হয়েছে ✓',
+    reportFail: 'PDF বানানো যায়নি — আবার চেষ্টা করুন',
+    reportNoData: 'আগে ডেটা সিঙ্ক হতে দিন',
     chartYearSub: 'প্রতি মাসের শেষে মোট লাভ/ক্ষতি — ওঠানামা বোঝাতে স্কেল বড় করে দেখানো হয়েছে',
     recoveredTitle: (p) => `বিনিয়োগের ${p}% ফেরত এসেছে`,
     recoveredOf: (a, b) => `${a} / ${b}`,
@@ -610,6 +631,14 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'Saved:',
     editLabel: 'Edit',
+    reportTitle: 'Monthly report (PDF)',
+    reportDesc: 'Download it at month end, before you change the dates in the sheet.',
+    reportLangLabel: 'Report language',
+    reportDownload: 'Download PDF',
+    reportShare: 'Share',
+    reportSaved: 'PDF downloaded ✓',
+    reportFail: 'Could not create the PDF — please try again',
+    reportNoData: 'Let the data sync first',
     chartYearSub: 'Total profit / loss at each month end — scale zoomed in to show the movement',
     recoveredTitle: (p) => `${p}% of the investment recovered`,
     recoveredOf: (a, b) => `${a} / ${b}`,
@@ -1165,6 +1194,426 @@ function lifetimeChartHTML(curYear) {
   </div>`;
 }
 
+
+// ================= Monthly report (PDF) =================
+// ===== Monthly income statement (official style) — A4 page 794 x 1123, built as SVG =====
+// model: { lang, ref, periods:[{label, weeks}], range, assumptions:{marketRate,totalMachines,singeingRate},
+//          weeks:[...], singeing:[...], generated }
+
+var REPORT_TXT = {
+  en: {
+    title: 'MONTHLY INCOME STATEMENT', basis: 'Weekly Based Monthly Total',
+    refNo: 'REPORT NO.', period: 'REPORTING PERIOD', range: 'DATE RANGE', generated: 'GENERATED ON',
+    marketRate: 'MARKET RATE', machines: 'TOTAL MACHINES', singeRate: 'SINGEING RATE', currency: 'CURRENCY', currencyVal: 'BDT (৳)', perThaan: '/ Thaan',
+    summary: 'SUMMARY OF INCOME', thaanRow: 'Total Thaan (Month)', factoryRow: 'Factory Profit — 24 Machines', myRow: 'My Profit — 4 Machines (My Share)',
+    twoRow: 'Profit — 2 Machines', singRow: 'Thread Singeing Income', combRow: 'COMBINED INCOME', combSub: '4 + 2 Machines + Thread Singeing',
+    chart: 'WEEKLY COMBINED INCOME', secA: 'A.  PRODUCTION & PROFIT', secB: 'B.  THREAD SINGEING INCOME', notes: 'NOTES & BASIS OF CALCULATION',
+    week: 'Week', date: 'Date', pieces: 'Total\nPieces', thaan: 'Weekly\nThaan', rate: 'Market\nRate', totalProfit: 'Total\nProfit', myProfit: 'My Profit\n(4 Machines)',
+    twoProfit: '2 Machines\nProfit', comb: 'Combined\nIncome', monthlyTotal: 'MONTHLY TOTAL', singed: 'Singed Thaan', pay: 'Singeing Pay',
+    notesList: [
+      ['1.  Weekly Thaan = Total Pieces ÷ 4.'],
+      ['2.  Total Profit = Weekly Thaan × Market Rate.'],
+      ['3.  Per-machine profit = Total Profit ÷ Total', '      Machines × Machine Share (4 or 2).'],
+      ['4.  Combined Income = My Profit + 2 Machines', '      Profit + that week\'s Thread Singeing Pay.'],
+    ],
+    preparedBy: 'Prepared by', verifiedBy: 'Verified by', approvedBy: 'Approved by (Partner)', signLine: 'Signature & Date',
+    confidential: 'Confidential — for internal use only', page: 'Page 1 of 1', weekWord: 'Week',
+  },
+  bn: {
+    title: 'মাসিক আয়ের বিবরণী', basis: 'সপ্তাহভিত্তিক মাসিক মোট',
+    refNo: 'রিপোর্ট নং', period: 'রিপোর্টের সময়কাল', range: 'তারিখের পরিসর', generated: 'তৈরির তারিখ',
+    marketRate: 'মার্কেট রেট', machines: 'মোট মেশিন', singeRate: 'সিঙ্গিং রেট', currency: 'মুদ্রা', currencyVal: 'বাংলাদেশি টাকা (৳)', perThaan: '/ থান',
+    summary: 'আয়ের সারসংক্ষেপ', thaanRow: 'মোট থান (মাস)', factoryRow: 'ফ্যাক্টরি লাভ — ২৪ মেশিন', myRow: 'আমার লাভ — ৪ মেশিন (আমার অংশ)',
+    twoRow: 'লাভ — ২ মেশিন', singRow: 'সুতা সিঙ্গিং ইনকাম', combRow: 'কম্বাইন্ড ইনকাম', combSub: '৪ + ২ মেশিন + সুতা সিঙ্গিং',
+    chart: 'সপ্তাহভিত্তিক কম্বাইন্ড ইনকাম', secA: 'ক.  প্রোডাকশন ও লাভ', secB: 'খ.  সুতা সিঙ্গিং ইনকাম', notes: 'হিসাবের নিয়ম ও টীকা',
+    week: 'সপ্তাহ', date: 'তারিখ', pieces: 'মোট\nপিস', thaan: 'সাপ্তাহিক\nথান', rate: 'মার্কেট\nরেট', totalProfit: 'মোট\nলাভ', myProfit: 'আমার লাভ\n(৪ মেশিন)',
+    twoProfit: '২ মেশিন\nলাভ', comb: 'কম্বাইন্ড\nইনকাম', monthlyTotal: 'মাসিক মোট', singed: 'সিঙ্গড থান', pay: 'সিঙ্গিং পে',
+    notesList: [
+      ['১.  সাপ্তাহিক থান = মোট পিস ÷ ৪।'],
+      ['২.  মোট লাভ = সাপ্তাহিক থান × মার্কেট রেট।'],
+      ['৩.  প্রতি মেশিনের লাভ = মোট লাভ ÷ মোট মেশিন', '      × মেশিনের অংশ (৪ বা ২)।'],
+      ['৪.  কম্বাইন্ড = আমার লাভ + ২ মেশিনের লাভ', '      + ওই সপ্তাহের সিঙ্গিং পে।'],
+    ],
+    preparedBy: 'প্রস্তুতকারী', verifiedBy: 'যাচাইকারী', approvedBy: 'অনুমোদনকারী (পার্টনার)', signLine: 'স্বাক্ষর ও তারিখ',
+    confidential: 'গোপনীয় — শুধু অভ্যন্তরীণ ব্যবহারের জন্য', page: 'পৃষ্ঠা ১ / ১', weekWord: 'সপ্তাহ',
+  },
+};
+
+function reportSvg(m) {
+  var T = REPORT_TXT[m.lang] || REPORT_TXT.en;
+  var SANS = m.fontFamily || "'Noto Sans','Noto Sans Bengali','Roboto','Segoe UI','Helvetica Neue',Arial,sans-serif";
+  var SERIF = m.fontHead || "'Noto Serif','Noto Serif Bengali','Georgia','Times New Roman',serif";
+  var W = 794, H = 1123, MX = 44, CW = W - 2 * MX;
+  var INK = '#1f2a24', GREEN = '#0f5c46', GREEN2 = '#0a4535', GOLD = '#b8901f', GOLDL = '#e8d9a6', LINE = '#d9cfb4', MUTE = '#6f6a58', ZEBRA = '#fbf8ee', PALE = '#f4ecd2';
+  var digits = function (s) { return m.lang === 'bn' ? String(s).replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : String(s); };
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var num = function (v) { return Math.round(Number(v) || 0).toLocaleString('en-IN'); };
+  var money = function (v) { var n = Math.round(Number(v) || 0); return (n < 0 ? '-' : '') + '৳' + Math.abs(n).toLocaleString('en-IN'); };
+  var o = '';
+  var text = function (x, y, s, size, weight, fill, anchor, extra) {
+    o += '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="' + weight + '" fill="' + fill + '" text-anchor="' + (anchor || 'start') + '"' + (extra || '') + '>' + s + '</text>';
+  };
+  var rect = function (x, y, w, h, fill, stroke, sw, extra) {
+    o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + fill + '"' + (stroke ? ' stroke="' + stroke + '" stroke-width="' + (sw || 1) + '"' : '') + (extra || '') + '></rect>';
+  };
+  var line = function (x1, y1, x2, y2, stroke, sw, extra) {
+    o += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + stroke + '" stroke-width="' + sw + '"' + (extra || '') + '/>';
+  };
+  var serif = ' font-family="' + SERIF.replace(/"/g, '&quot;') + '"';
+  var weave = function (x, y, S, cid) {
+    var cnt = 5, step = S / cnt, th = step * 0.84, c, r, s = '';
+    s += '<clipPath id="' + cid + '"><rect x="' + x + '" y="' + y + '" width="' + S + '" height="' + S + '" rx="' + (S * 0.19) + '"/></clipPath><g clip-path="url(#' + cid + ')">';
+    for (c = 0; c < cnt; c++) s += '<rect x="' + (x + c * step + (step - th) / 2) + '" y="' + y + '" width="' + th + '" height="' + S + '" fill="url(#gV)"/>';
+    for (r = 0; r < cnt; r++) s += '<rect x="' + x + '" y="' + (y + r * step + (step - th) / 2) + '" width="' + S + '" height="' + th + '" fill="url(#gH)"/>';
+    for (r = 0; r < cnt; r++) for (c = 0; c < cnt; c++) {
+      if ((r + c) % 2 === 1) s += '<rect x="' + (x + c * step + (step - th) / 2) + '" y="' + (y + r * step + (step - th) / 2 - S * 0.02) + '" width="' + th + '" height="' + (th + S * 0.04) + '" fill="url(#gV)" stroke="#2f9c72" stroke-opacity="0.35" stroke-width="1"/>';
+    }
+    return s + '</g>';
+  };
+
+  var sum = function (arr, k) { return arr.reduce(function (a, r) { return a + (Number(r[k]) || 0); }, 0); };
+  var tot = {
+    pieces: sum(m.weeks, 'totalPieces'), thaan: sum(m.weeks, 'weeklyThaan'), total: sum(m.weeks, 'totalProfit'), my: sum(m.weeks, 'myProfit'),
+    two: sum(m.weeks, 'twoMachineProfit'), comb: sum(m.weeks, 'combinedProfit'), sThaan: sum(m.singeing, 'singedThaan'), sPay: sum(m.singeing, 'pay'),
+  };
+
+  var defs = '<defs>'
+    + '<linearGradient id="gH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fcebb8"/><stop offset="0.45" stop-color="#f6d27c"/><stop offset="1" stop-color="#e5ad48"/></linearGradient>'
+    + '<linearGradient id="gV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b6f2d6"/><stop offset="0.45" stop-color="#6fdcab"/><stop offset="1" stop-color="#3fb98a"/></linearGradient>'
+    + '<linearGradient id="gHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11694f"/><stop offset="1" stop-color="#0a4535"/></linearGradient>'
+    + '<linearGradient id="gGoldH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1dc93"/><stop offset="1" stop-color="#d9b44a"/></linearGradient>'
+    + '<linearGradient id="gBarG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c8a68"/><stop offset="1" stop-color="#0c5a43"/></linearGradient>'
+    + '<linearGradient id="gBarY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1cf6a"/><stop offset="1" stop-color="#c99a24"/></linearGradient>'
+    + '</defs>';
+
+  // ---- page, border, watermark ----
+  rect(0, 0, W, H, '#fffefa');
+  rect(14, 14, W - 28, H - 28, 'none', GOLD, 2);
+  rect(20, 20, W - 40, H - 40, 'none', GREEN, 0.8);
+
+  // ---- letterhead ----
+  o += '<rect x="' + (MX - 3) + '" y="' + (40 - 3) + '" width="72" height="72" rx="15" fill="#e9dcb9" stroke="' + GOLD + '" stroke-width="1.6"/>';
+  o += weave(MX, 40, 66, 'cLogo');
+  text(MX + 88, 70, 'ISLAM WEAVING FACTORY', 21.5, 700, GREEN2, 'start', serif + ' letter-spacing="1.2"');
+  text(MX + 88, 90, 'Raiganj, Sirajganj  ·  Bangladesh', 11.5, 600, MUTE, 'start', ' letter-spacing="0.4"');
+  line(MX + 88, 98, MX + 88 + 56, 98, GOLD, 2.4);
+
+  var px = W - MX;
+  text(px, 58, esc(T.title), 12, 700, GREEN, 'end', serif + ' letter-spacing="0.9"');
+  text(px, 76, esc(T.basis), 10.5, 600, MUTE, 'end');
+  var py = 98;
+  if (m.periods.length === 1) {
+    text(px, py + 6, esc(m.periods[0].label), 21, 800, INK, 'end', serif);
+  } else {
+    m.periods.forEach(function (p, i) {
+      text(px, py + i * 17, esc(p.label + (p.weeks ? '  ·  ' + p.weeks : '')), 13.5, 800, INK, 'end', serif);
+    });
+  }
+  line(MX, 128, W - MX, 128, GOLD, 2.2);
+  line(MX, 132, W - MX, 132, GREEN, 0.8);
+
+  // ---- information grid ----
+  var gy = 146, gh = 36, gw = CW / 4;
+  var periodText = m.periods.map(function (p) { return p.label; }).join(' – ');
+  var cells = [
+    [T.refNo, m.ref], [T.period, periodText], [T.range, digits(m.range)], [T.generated, digits(m.generated)],
+    [T.marketRate, digits(money(m.assumptions.marketRate)) + ' ' + T.perThaan], [T.machines, digits(m.assumptions.totalMachines)],
+    [T.singeRate, digits(money(m.assumptions.singeingRate)) + ' ' + T.perThaan], [T.currency, T.currencyVal],
+  ];
+  rect(MX, gy, CW, gh * 2, '#ffffff', LINE, 1);
+  rect(MX, gy, CW, gh * 2, 'none', '#b9ab7f', 1.1);
+  line(MX, gy + gh, W - MX, gy + gh, LINE, 1);
+  for (var gi = 1; gi < 4; gi++) line(MX + gi * gw, gy, MX + gi * gw, gy + gh * 2, LINE, 1);
+  cells.forEach(function (c, i) {
+    var cx = MX + (i % 4) * gw + 12, cy = gy + Math.floor(i / 4) * gh;
+    text(cx, cy + 14, esc(c[0]), 8.6, 700, MUTE, 'start', ' letter-spacing="0.9"');
+    text(cx, cy + 28, esc(c[1]), 12, 700, INK);
+  });
+
+  // ---- summary of income ----
+  var sy = 248;
+  text(MX, sy, esc(T.summary), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
+  line(MX, sy + 6, MX + 430, sy + 6, GREEN, 1.2);
+  var rows = [
+    [T.thaanRow, digits(num(tot.thaan)), false],
+    [T.factoryRow, digits(money(tot.total)), false],
+    [T.myRow, digits(money(tot.my)), true],
+    [T.twoRow, digits(money(tot.two)), false],
+    [T.singRow, digits(money(tot.sPay)), false],
+  ];
+  var ry0 = sy + 10, rh = 30;
+  rect(MX, ry0, 430, rh * 5, '#ffffff', LINE, 1);
+  rows.forEach(function (r, i) {
+    var y = ry0 + i * rh;
+    if (i % 2) rect(MX + 0.5, y, 429, rh, ZEBRA);
+    if (i) line(MX, y, MX + 430, y, LINE, 0.8);
+    rect(MX + 12, y + 11, 6, 6, r[2] ? GREEN : GOLD);
+    text(MX + 28, y + 19, esc(r[0]), 12, r[2] ? 700 : 600, INK);
+    text(MX + 416, y + 19, esc(r[1]), 13, 700, r[2] ? GREEN : INK, 'end');
+  });
+  var ty = ry0 + rh * 5;
+  rect(MX, ty, 430, 46, 'url(#gHead)');
+  line(MX, ty + 46, MX + 430, ty + 46, GOLD, 3);
+  text(MX + 16, ty + 21, esc(T.combRow), 12.5, 700, '#ffffff', 'start', serif + ' letter-spacing="1.2"');
+  text(MX + 16, ty + 37, esc(T.combSub), 9.8, 600, '#bfe3d3');
+  text(MX + 416, ty + 32, esc(digits(money(tot.comb))), 25, 800, '#ffe28a', 'end');
+  var sumBottom = ty + 46;
+
+  // chart panel (right)
+  var cx0 = MX + 446, cw0 = CW - 446, cTop = sy - 12;
+  rect(cx0, cTop, cw0, sumBottom - cTop, '#ffffff', LINE, 1);
+  text(cx0 + 14, cTop + 22, esc(T.chart), 10.5, 700, GREEN, 'start', serif + ' letter-spacing="0.9"');
+  line(cx0 + 14, cTop + 30, cx0 + cw0 - 14, cTop + 30, LINE, 1);
+  var v4 = m.weeks.map(function (w) { return Number(w.combinedProfit) || 0; });
+  var vmax = Math.max.apply(null, v4.concat([1])), imax = v4.indexOf(Math.max.apply(null, v4));
+  var pBot = sumBottom - 30, pTop = cTop + 58, slot = (cw0 - 28) / 4, bw = 28;
+  for (var gl = 0; gl <= 3; gl++) line(cx0 + 14, pBot - gl * (pBot - pTop) / 3, cx0 + cw0 - 14, pBot - gl * (pBot - pTop) / 3, gl ? '#ece4cb' : '#b9ab7f', gl ? 0.7 : 1, gl ? ' stroke-dasharray="3 3"' : '');
+  v4.forEach(function (v, i) {
+    var h = Math.max(3, (v / vmax) * (pBot - pTop - 6)), bx = cx0 + 14 + slot * i + (slot - bw) / 2;
+    rect(bx, pBot - h, bw, h, i === imax ? 'url(#gBarY)' : 'url(#gBarG)', null, 0, ' rx="3"');
+    text(bx + bw / 2, pBot - h - 6, esc(digits(money(v))), 9.6, 700, i === imax ? '#8a6410' : GREEN, 'middle');
+    text(bx + bw / 2, pBot + 15, esc(digits(T.weekWord + ' ' + (i + 1))), 9.6, 600, MUTE, 'middle');
+  });
+
+  // ---- section A table ----
+  var aY = sumBottom + 30;
+  text(MX, aY, esc(T.secA), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
+  line(MX, aY + 6, W - MX, aY + 6, GREEN, 1.2);
+  var tA = aY + 12, hA = 42, rA = 32, totA = 36, AH = hA + rA * 4 + totA;
+  var cols = [58, 74, 76, 64, 52, 88, 90, 94, 110], colX = [MX];
+  cols.forEach(function (w, i) { colX.push(colX[i] + w); });
+  rect(MX, tA, CW, AH, '#ffffff', '#b9ab7f', 1.1);
+  rect(MX, tA, CW, hA, 'url(#gHead)');
+  rect(colX[8], tA, cols[8], hA, 'url(#gGoldH)');
+  [T.week, T.date, T.pieces, T.thaan, T.rate, T.totalProfit, T.myProfit, T.twoProfit, T.comb].forEach(function (h, i) {
+    var ls = h.split('\n'), tx = i < 2 ? colX[i] + 10 : colX[i + 1] - 10, base = tA + (ls.length === 2 ? 17 : 25);
+    ls.forEach(function (ln, k) { text(tx, base + k * 13, esc(ln), 10, 700, i === 8 ? '#3d2c00' : '#ffffff', i < 2 ? 'start' : 'end', ' letter-spacing="0.3"'); });
+  });
+  m.weeks.forEach(function (w, i) {
+    var y = tA + hA + i * rA, ty2 = y + 21;
+    if (i % 2) rect(MX + 0.5, y, CW - 1, rA, ZEBRA);
+    if (i) line(MX, y, W - MX, y, LINE, 0.8);
+    text(colX[0] + 10, ty2, esc(T.week + ' ' + digits(i + 1)), 11.5, 700, INK);
+    text(colX[1] + 10, ty2, esc(digits(w.date)), 11.5, 600, '#4a4a3c');
+    [num(w.totalPieces), num(w.weeklyThaan), money(m.assumptions.marketRate), money(w.totalProfit), money(w.myProfit), money(w.twoMachineProfit), money(w.combinedProfit)].forEach(function (v, k) {
+      var ci = k + 2;
+      text(colX[ci + 1] - 10, ty2, esc(digits(v)), 11.5, ci === 8 ? 700 : 600, ci === 8 ? '#7a5a08' : (ci === 6 ? GREEN : INK), 'end');
+    });
+  });
+  var tA0 = tA + hA + rA * 4;
+  rect(MX + 0.5, tA0, CW - 1, totA - 0.5, PALE);
+  line(MX, tA0, W - MX, tA0, GREEN, 1.6);
+  text(colX[0] + 10, tA0 + 22, esc(T.monthlyTotal), 11.5, 700, GREEN2, 'start', serif + ' letter-spacing="0.8"');
+  [num(tot.pieces), num(tot.thaan), '—', money(tot.total), money(tot.my), money(tot.two), money(tot.comb)].forEach(function (v, k) {
+    text(colX[k + 3] - 10, tA0 + 22, esc(digits(v)), 12, 700, GREEN2, 'end');
+  });
+  for (var ci2 = 1; ci2 < 9; ci2++) line(colX[ci2], tA, colX[ci2], tA + AH, ci2 === 8 ? GOLD : '#e6dec4', 0.7, ' opacity="0.9"');
+
+  // ---- section B table (left) + notes (right) ----
+  var bY = tA + AH + 30;
+  text(MX, bY, esc(T.secB), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
+  line(MX, bY + 6, MX + 400, bY + 6, GREEN, 1.2);
+  var tB = bY + 12, hB = 32, rB = 29, totB = 34, BH = hB + rB * 4 + totB, BW = 400;
+  var bc = [74, 96, 114, 116], bx = [MX];
+  bc.forEach(function (w, i) { bx.push(bx[i] + w); });
+  rect(MX, tB, BW, BH, '#ffffff', '#b9ab7f', 1.1);
+  rect(MX, tB, BW, hB, 'url(#gHead)');
+  [T.week, T.date, T.singed, T.pay].forEach(function (h, i) {
+    text(i < 2 ? bx[i] + 10 : bx[i + 1] - 10, tB + 21, esc(h), 10, 700, '#ffffff', i < 2 ? 'start' : 'end', ' letter-spacing="0.3"');
+  });
+  m.singeing.forEach(function (s, i) {
+    var y = tB + hB + i * rB;
+    if (i % 2) rect(MX + 0.5, y, BW - 1, rB, ZEBRA);
+    if (i) line(MX, y, MX + BW, y, LINE, 0.8);
+    text(bx[0] + 10, y + 18, esc(T.week + ' ' + digits(i + 1)), 11.5, 700, INK);
+    text(bx[1] + 10, y + 18, esc(digits(s.date)), 11.5, 600, '#4a4a3c');
+    text(bx[3] - 10, y + 18, esc(digits(num(s.singedThaan))), 11.5, 600, INK, 'end');
+    text(bx[4] - 10, y + 18, esc(digits(money(s.pay))), 11.5, 700, '#7a5a08', 'end');
+  });
+  var tB0 = tB + hB + rB * 4;
+  rect(MX + 0.5, tB0, BW - 1, totB - 0.5, PALE);
+  line(MX, tB0, MX + BW, tB0, GREEN, 1.6);
+  text(bx[0] + 10, tB0 + 21, esc(T.monthlyTotal), 11.5, 700, GREEN2, 'start', serif + ' letter-spacing="0.8"');
+  text(bx[3] - 10, tB0 + 21, esc(digits(num(tot.sThaan))), 12, 700, GREEN2, 'end');
+  text(bx[4] - 10, tB0 + 21, esc(digits(money(tot.sPay))), 12, 700, GREEN2, 'end');
+
+  var nx = MX + BW + 22, nw = CW - BW - 22;
+  text(nx, bY, esc(T.notes), 11.5, 700, GREEN, 'start', serif + ' letter-spacing="1"');
+  line(nx, bY + 6, nx + nw, bY + 6, GREEN, 1.2);
+  rect(nx, tB, nw, BH, '#fffdf5', LINE, 1);
+  var ny = tB + 24;
+  T.notesList.forEach(function (ln) {
+    ln.forEach(function (s) { text(nx + 14, ny, esc(s), 9.8, 600, '#4a4a3c', 'start', ' xml:space="preserve"'); ny += 14; });
+    ny += 8;
+  });
+
+  // ---- signatures ----
+  var sgY = tB + BH + 58, sw = (CW - 2 * 40) / 3;
+  [T.preparedBy, T.verifiedBy, T.approvedBy].forEach(function (lb, i) {
+    var x = MX + i * (sw + 40);
+    line(x, sgY, x + sw, sgY, INK, 0.9);
+    text(x + sw / 2, sgY + 15, esc(lb), 10.5, 700, INK, 'middle', serif);
+    text(x + sw / 2, sgY + 28, esc(T.signLine), 8.8, 600, MUTE, 'middle');
+  });
+
+  // ---- footer ----
+  var fy = H - 62;
+  line(MX, fy, W - MX, fy, GOLD, 1.4);
+  line(MX, fy + 3, W - MX, fy + 3, GREEN, 0.6);
+  text(MX, fy + 20, 'ISLAM WEAVING FACTORY  ·  Raiganj, Sirajganj  ·  ' + esc(T.confidential), 8.8, 600, MUTE);
+  text(W - MX, fy + 20, esc(T.page), 8.8, 700, MUTE, 'end');
+
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="' + SANS.replace(/"/g, '&quot;') + '">' + defs + o + '</svg>';
+}
+
+
+let reportLang = (function () { try { return localStorage.getItem('reportLang') === 'bn' ? 'bn' : 'en'; } catch (e) { return 'en'; } })();
+
+function setReportLang(l) {
+  reportLang = l === 'bn' ? 'bn' : 'en';
+  try { localStorage.setItem('reportLang', reportLang); } catch (e) {}
+  renderAll();
+}
+
+function reportDigits(rl, v) {
+  return rl === 'bn' ? String(v).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]) : String(v);
+}
+
+function reportRef(groups) {
+  const p2 = n => String(n).padStart(2, '0');
+  if (!groups) { const d = new Date(); return 'IW-' + d.getFullYear() + '-' + p2(d.getMonth() + 1); }
+  const a = groups[0], b = groups[1];
+  if (!b) return 'IW-' + a.y + '-' + p2(a.m + 1);
+  return 'IW-' + a.y + '-' + p2(a.m + 1) + '/' + (b.y !== a.y ? b.y + '-' : '') + p2(b.m + 1);
+}
+
+function buildReportModel(rl) {
+  const blankW = i => ({ week: i + 1, date: '', totalPieces: 0, weeklyThaan: 0, totalProfit: 0, myProfit: 0, twoMachineProfit: 0, combinedProfit: 0 });
+  const blankS = i => ({ week: i + 1, date: '', singedThaan: 0, pay: 0 });
+  const fill = (arr, mk) => { const out = (arr || []).slice(0, 4); while (out.length < 4) out.push(mk(out.length)); return out; };
+  const weeks = fill(data.weeks, blankW);
+  const singeing = fill(data.singeing, blankS);
+  const groups = getCycleInfo();
+  const wWord = rl === 'bn' ? 'সপ্তাহ' : 'Week';
+  let periods;
+  if (groups) {
+    const two = groups.length > 1;
+    periods = groups.map(g => {
+      const mn = rl === 'bn' ? MONTH_NAMES_BN[g.m] : (two ? MONTH_NAMES[g.m].slice(0, 3) : MONTH_NAMES[g.m]).toUpperCase();
+      const wl = g.from === g.to ? wWord + ' ' + g.from : wWord + ' ' + g.from + '-' + g.to;
+      return { label: mn + ' ' + reportDigits(rl, g.y), weeks: two ? reportDigits(rl, wl) : '' };
+    });
+  } else {
+    const d = new Date();
+    periods = [{ label: (rl === 'bn' ? MONTH_NAMES_BN[d.getMonth()] : MONTH_NAMES[d.getMonth()].toUpperCase()) + ' ' + reportDigits(rl, d.getFullYear()), weeks: '' }];
+  }
+  const dates = weeks.map(w => w.date).filter(Boolean);
+  const nd = new Date();
+  return {
+    lang: rl, ref: reportRef(groups), assumptions: data.assumptions, periods, weeks, singeing,
+    range: dates.length ? dates[0] + ' – ' + dates[dates.length - 1] : '',
+    generated: nd.getDate() + '.' + (nd.getMonth() + 1) + '.' + String(nd.getFullYear()).slice(2),
+  };
+}
+
+// SVG page -> JPEG (system fonts handle the Bengali text)
+async function renderReportJpeg(svg) {
+  const SC = 2, W = 794, H = 1123;
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error('svg'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+  const cv = document.createElement('canvas');
+  cv.width = W * SC; cv.height = H * SC;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.93));
+  if (!blob) throw new Error('jpeg');
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), w: cv.width, h: cv.height };
+}
+
+// one A4 page that holds the JPEG — a tiny hand-written PDF, no library needed
+function jpegToPdf(jpg, wPx, hPx) {
+  const enc = new TextEncoder();
+  const parts = [], offs = [];
+  let offset = 0;
+  const push = b => { parts.push(b); offset += b.length; };
+  const str = s => push(enc.encode(s));
+  str('%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n');
+  offs[1] = offset; str('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  offs[2] = offset; str('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  offs[3] = offset; str('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n');
+  offs[4] = offset;
+  str('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + wPx + ' /Height ' + hPx + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
+  push(jpg);
+  str('\nendstream\nendobj\n');
+  const content = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+  offs[5] = offset; str('5 0 obj\n<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream\nendobj\n');
+  const xref = offset;
+  let x = 'xref\n0 6\n0000000000 65535 f \n';
+  for (let i = 1; i <= 5; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  str(x + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  return new Blob(parts, { type: 'application/pdf' });
+}
+
+function reportFileName() {
+  const groups = getCycleInfo();
+  const tag = groups ? groups.map(g => MONTH_NAMES[g.m].slice(0, 3) + '-' + g.y).join('_') : 'Report';
+  return 'Islam-Weaving-Report-' + tag + '.pdf';
+}
+
+async function downloadReport(share) {
+  if (pendingSaves.has('report')) return;
+  if (!data) { showToast(t('reportNoData'), 'err'); return; }
+  pendingSaves.add('report');
+  applyPending();
+  try {
+    const jpg = await renderReportJpeg(reportSvg(buildReportModel(reportLang)));
+    const blob = jpegToPdf(jpg.bytes, jpg.w, jpg.h);
+    const name = reportFileName();
+    if (share && typeof File !== 'undefined' && navigator.canShare) {
+      const file = new File([blob], name, { type: 'application/pdf' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: name });
+        haptic(30);
+        return;
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    showToast(t('reportSaved'), 'ok');
+    haptic(30);
+  } catch (e) {
+    if (!(e && e.name === 'AbortError')) showToast(t('reportFail'), 'err');
+  } finally {
+    pendingSaves.delete('report');
+    applyPending();
+  }
+}
+
+function reportCardHTML() {
+  const canShare = typeof File !== 'undefined' && !!navigator.canShare;
+  const chip = (code, label) => `<button type="button" class="rep-chip${reportLang === code ? ' on' : ''}" onclick="setReportLang('${code}')">${label}</button>`;
+  return `<div class="glass-card p-6 border-l-4 border-l-luxuryGold-500">
+      <div class="rep-head">
+        <div class="rep-ico">PDF</div>
+        <div><h3 class="font-bold text-brand-900 text-base">${t('reportTitle')}</h3><p class="text-xs text-slate-600 font-medium">${t('reportDesc')}</p></div>
+      </div>
+      <div class="rep-lang"><span>${t('reportLangLabel')}</span>${chip('en', 'English')}${chip('bn', 'বাংলা')}</div>
+      <div class="rep-actions">
+        <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" data-save="report" onclick="downloadReport(false)">${t('reportDownload')}</button>
+        ${canShare ? `<button type="button" class="rep-share" data-save="report" onclick="downloadReport(true)">${t('reportShare')}</button>` : ''}
+      </div>
+    </div>`;
+}
+
 const unlockedFields = new Set();
 const PEN_SVG = '<svg class="ico-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const CLOSE_SVG = '<svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
@@ -1349,6 +1798,8 @@ function renderDashboard() {
           </div>
         </div>
       </div>
+
+      ${reportCardHTML()}
 
       <div class="glass-card p-6 border-l-4 border-l-brand-600">
         <div class="flex items-center gap-2 mb-1">
