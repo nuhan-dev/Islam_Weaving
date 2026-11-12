@@ -527,8 +527,8 @@ const I18N = {
     tabDashboard: 'সারাংশ', tabProduction: 'প্রোডাকশন', tabSingeing: 'সিঙ্গিং', tabLifetime: 'লাইফটাইম', tabSettings: 'সেটিংস',
     syncNoUrl: 'শীট লিংক সেট করুন', syncSyncing: 'সিঙ্ক হচ্ছে...', syncOk: 'Online', syncError: 'সিঙ্ক ব্যর্থ',
     emptyNotice: 'শীটের সাথে এখনো সিঙ্ক হয়নি। "সেটিংস" ট্যাবে গিয়ে Google Apps Script লিংকটি দিন।',
-    prodCardTitle: 'প্রোডাকশন প্রফিট —', tag24_4_2: '২৪ / ৪ / ২ মেশিন',
-    label24: '২৪ মেশিন (ফ্যাক্টরি টোটাল)', label4: '৪ মেশিন', label2: '২ মেশিন',
+    prodCardTitle: 'প্রোডাকশন প্রফিট —', tag24_4_2: () => machNum() + ' / ৪ / ২ মেশিন',
+    label24: () => machNum() + ' মেশিন (ফ্যাক্টরি টোটাল)', label4: '৪ মেশিন', label2: '২ মেশিন',
     overallTitle: 'সামগ্রিক আয় ও লাভ-ক্ষতি বিবরণী', tagCombined: 'কম্বাইন্ড ব্যালেন্স',
     labelSingeingIncome: (m) => 'সিঙ্গিং ইনকাম (' + m + ')', labelCombinedIncome: 'কম্বাইন্ড ইনকাম (৪+২+সিঙ্গিং)',
     labelYearPL: (y) => y + ' সালের লাভ/ক্ষতি', labelLifetimePL: 'লাইফটাইম নেট প্রফিট', labelYearIncome: (y) => y + ' সালের মোট ইনকাম (এখন পর্যন্ত)',
@@ -599,8 +599,8 @@ const I18N = {
     tabDashboard: 'Summary', tabProduction: 'Production', tabSingeing: 'Singeing', tabLifetime: 'Lifetime', tabSettings: 'Settings',
     syncNoUrl: 'Set sheet link', syncSyncing: 'Syncing...', syncOk: 'Online', syncError: 'Sync failed',
     emptyNotice: 'Not synced with the sheet yet. Go to "Settings" and enter the Apps Script link.',
-    prodCardTitle: 'Production Profit —', tag24_4_2: '24 / 4 / 2 Machines',
-    label24: '24 Machines (Factory Total)', label4: '4 Machines', label2: '2 Machines',
+    prodCardTitle: 'Production Profit —', tag24_4_2: () => machNum() + ' / 4 / 2 Machines',
+    label24: () => machNum() + ' Machines (Factory Total)', label4: '4 Machines', label2: '2 Machines',
     overallTitle: 'Overall Financial Statement', tagCombined: 'Combined Balance',
     labelSingeingIncome: (m) => 'Singeing Income (' + m + ')', labelCombinedIncome: 'Combined Income (4+2+Singeing)',
     labelYearPL: (y) => y + ' Profit/Loss', labelLifetimePL: 'Lifetime Net Profit', labelYearIncome: (y) => y + ' Total Income (To Date)',
@@ -668,6 +668,14 @@ const I18N = {
 };
 
 let lang = localStorage.getItem('appLang') || 'bn';
+// মোট মেশিন সংখ্যা (শিটের Total Machines থেকে) — লেবেলে নিজে বসে
+function machNum() {
+  var n = data && data.assumptions && data.assumptions.totalMachines;
+  if (n === undefined || n === null || n === '') return '—';
+  n = String(n);
+  return lang === 'bn' ? n.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : n;
+}
+
 function t(key, ...args) {
   const entry = I18N[lang][key];
   return typeof entry === 'function' ? entry(...args) : entry;
@@ -1205,7 +1213,7 @@ var REPORT_TXT = {
     title: 'MONTHLY INCOME STATEMENT', basis: 'Weekly Based Monthly Total',
     refNo: 'REPORT NO.', period: 'REPORTING PERIOD', range: 'DATE RANGE', generated: 'GENERATED ON',
     marketRate: 'MARKET RATE', machines: 'TOTAL MACHINES', singeRate: 'SINGEING RATE', currency: 'CURRENCY', currencyVal: 'BDT (৳)', perThaan: '/ Thaan',
-    summary: 'SUMMARY OF INCOME', thaanRow: 'Total Thaan (Month)', factoryRow: 'Factory Profit — 24 Machines', myRow: 'My Profit — 4 Machines (My Share)',
+    summary: 'SUMMARY OF INCOME', thaanRow: 'Total Thaan (Month)', factoryRow: function (n) { return 'Factory Profit — ' + n + ' Machines'; }, myRow: 'My Profit — 4 Machines (My Share)',
     twoRow: 'Profit — 2 Machines', singRow: 'Thread Singeing Income', combRow: 'COMBINED INCOME', combSub: '4 + 2 Machines + Thread Singeing',
     chart: 'WEEKLY COMBINED INCOME', secA: 'A.  PRODUCTION & PROFIT', secB: 'B.  THREAD SINGEING INCOME', notes: 'NOTES & BASIS OF CALCULATION',
     week: 'Week', date: 'Date', pieces: 'Total\nPieces', thaan: 'Weekly\nThaan', rate: 'Market\nRate', totalProfit: 'Total\nProfit', myProfit: 'My Profit\n(4 Machines)',
@@ -1223,7 +1231,7 @@ var REPORT_TXT = {
     title: 'মাসিক আয়ের বিবরণী', basis: 'সপ্তাহভিত্তিক মাসিক মোট',
     refNo: 'রিপোর্ট নং', period: 'রিপোর্টের সময়কাল', range: 'তারিখের পরিসর', generated: 'তৈরির তারিখ',
     marketRate: 'মার্কেট রেট', machines: 'মোট মেশিন', singeRate: 'সিঙ্গিং রেট', currency: 'মুদ্রা', currencyVal: 'বাংলাদেশি টাকা (৳)', perThaan: '/ থান',
-    summary: 'আয়ের সারসংক্ষেপ', thaanRow: 'মোট থান (মাস)', factoryRow: 'ফ্যাক্টরি লাভ — ২৪ মেশিন', myRow: 'আমার লাভ — ৪ মেশিন (আমার অংশ)',
+    summary: 'আয়ের সারসংক্ষেপ', thaanRow: 'মোট থান (মাস)', factoryRow: function (n) { return 'ফ্যাক্টরি লাভ — ' + n + ' মেশিন'; }, myRow: 'আমার লাভ — ৪ মেশিন (আমার অংশ)',
     twoRow: 'লাভ — ২ মেশিন', singRow: 'সুতা সিঙ্গিং ইনকাম', combRow: 'কম্বাইন্ড ইনকাম', combSub: '৪ + ২ মেশিন + সুতা সিঙ্গিং',
     chart: 'সপ্তাহভিত্তিক কম্বাইন্ড ইনকাম', secA: 'ক.  প্রোডাকশন ও লাভ', secB: 'খ.  সুতা সিঙ্গিং ইনকাম', notes: 'হিসাবের নিয়ম ও টীকা',
     week: 'সপ্তাহ', date: 'তারিখ', pieces: 'মোট\nপিস', thaan: 'সাপ্তাহিক\nথান', rate: 'মার্কেট\nরেট', totalProfit: 'মোট\nলাভ', myProfit: 'আমার লাভ\n(৪ মেশিন)',
@@ -1336,7 +1344,7 @@ function reportSvg(m) {
   line(MX, sy + 6, MX + 430, sy + 6, GREEN, 1.2);
   var rows = [
     [T.thaanRow, digits(num(tot.thaan)), false],
-    [T.factoryRow, digits(money(tot.total)), false],
+    [T.factoryRow(digits(m.assumptions.totalMachines)), digits(money(tot.total)), false],
     [T.myRow, digits(money(tot.my)), true],
     [T.twoRow, digits(money(tot.two)), false],
     [T.singRow, digits(money(tot.sPay)), false],
