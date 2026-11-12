@@ -584,6 +584,7 @@ const I18N = {
     toastNoUrl: 'আগে সেটিংসে শিটের URL দিন',
     offlineBar: (tm) => `অফলাইন — শেষ সিঙ্ক: ${tm}`,
     offlineNever: 'এখনো সিঙ্ক হয়নি',
+    chartMonthlyTitle: (y) => `${y} সালের মাসিক ইনকাম`, chartMonthlySub: 'প্রতি মাসের ইনকাম — সোনালি বারটি সবশেষ মাস', avgWord: 'গড়', vsPrevMonth: 'আগের মাসের তুলনায়',
     chartWeeklyTitle: 'সপ্তাহভিত্তিক লাভ',
     chartWeeklySub: 'নিচের চিহ্নে আগের সপ্তাহের তুলনায় ওঠানামা',
     chartYearTitle: (y) => `${y} সালের লাভ/ক্ষতির গতি`,
@@ -656,6 +657,7 @@ const I18N = {
     toastNoUrl: 'Add the sheet URL in Settings first',
     offlineBar: (tm) => `Offline — last sync: ${tm}`,
     offlineNever: 'not synced yet',
+    chartMonthlyTitle: (y) => `${y} monthly income`, chartMonthlySub: 'Income for each month — the gold bar is the latest month', avgWord: 'Avg', vsPrevMonth: 'vs previous month',
     chartWeeklyTitle: 'Weekly profit',
     chartWeeklySub: 'Chips below show change vs the previous week',
     chartYearTitle: (y) => `${y} profit / loss trend`,
@@ -1099,6 +1101,96 @@ function weeksChartHTML() {
   </div>`;
 }
 
+// compact numbers for chart axes: 14K / 7.4L
+function chartCompact(v) {
+  const a = Math.abs(v), sg = v < 0 ? '−' : '';
+  let txt;
+  if (a >= 100000) txt = (Math.round(a / 10000) / 10).toString() + (lang === 'bn' ? ' লা' : 'L');
+  else if (a >= 1000) txt = (a >= 10000 ? Math.round(a / 1000) : Math.round(a / 100) / 10).toString() + (lang === 'bn' ? ' হা' : 'K');
+  else txt = Math.round(a).toString();
+  return sg + localDigits(txt);
+}
+
+// smooth curve through points (monotone cubic, no overshoot)
+function smoothPath(p) {
+  if (p.length < 2) return '';
+  const n = p.length, dx = [], m = [], t = [];
+  for (let i = 0; i < n - 1; i++) { dx[i] = p[i + 1][0] - p[i][0]; m[i] = (p[i + 1][1] - p[i][1]) / (dx[i] || 1); }
+  t[0] = m[0]; t[n - 1] = m[n - 2];
+  for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+  let d = 'M' + p[0][0].toFixed(1) + ' ' + p[0][1].toFixed(1);
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i] / 3;
+    d += ' C' + (p[i][0] + h).toFixed(1) + ' ' + (p[i][1] + t[i] * h).toFixed(1) + ' '
+      + (p[i + 1][0] - h).toFixed(1) + ' ' + (p[i + 1][1] - t[i + 1] * h).toFixed(1) + ' '
+      + p[i + 1][0].toFixed(1) + ' ' + p[i + 1][1].toFixed(1);
+  }
+  return d;
+}
+
+function monthShort() {
+  return lang === 'bn'
+    ? ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+}
+
+function monthlyIncomeChartHTML() {
+  if (!data || !data.lifetime) return '';
+  const nowD = new Date(), curYear = nowD.getFullYear(), nowM = nowD.getMonth();
+  const pts = [];
+  data.lifetime.forEach(r => {
+    if (Number(r.year) !== curYear) return;
+    const mi = MONTH_NAMES.indexOf(r.month);
+    const v = Number(r.monthlyIncome);
+    if (mi < 0 || mi > nowM || r.monthlyIncome === '' || !(v > 0)) return;
+    pts.push({ mi, v });
+  });
+  if (!pts.length) return '';
+  const MS = monthShort();
+  const W = 340, H = 214, padL = 38, padR = 10, top = 26, bottom = 28;
+  const plotW = W - padL - padR, plotH = H - top - bottom;
+  const maxV = Math.max(...pts.map(p => p.v));
+  const step = (function () { const raw = maxV / 3, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag; })();
+  const yMax = Math.ceil(maxV / step) * step;
+  const y = v => top + (1 - v / yMax) * plotH;
+  const slot = plotW / 12, bw = Math.min(18, slot * 0.62);
+  const avg = pts.reduce((a, p) => a + p.v, 0) / pts.length;
+  const lastIdx = pts.length - 1;
+  let grid = '';
+  for (let g = 0; g <= yMax + 0.5; g += step) {
+    grid += `<line x1="${padL}" x2="${W - padR}" y1="${y(g).toFixed(1)}" y2="${y(g).toFixed(1)}" stroke="#e2e8f0" ${g ? 'stroke-dasharray="3 4"' : ''}></line>`
+      + `<text x="${padL - 6}" y="${(y(g) + 3).toFixed(1)}" text-anchor="end" font-size="8.5" font-weight="700" fill="#94a3b8">${g ? chartCompact(g) : '0'}</text>`;
+  }
+  let bars = '';
+  pts.forEach((p, i) => {
+    const x = padL + slot * p.mi + (slot - bw) / 2, yy = y(p.v), hh = y(0) - yy, r = Math.min(6, bw / 2);
+    const isLast = i === lastIdx;
+    bars += `<path d="M${x.toFixed(1)} ${y(0).toFixed(1)}V${(yy + r).toFixed(1)}Q${x.toFixed(1)} ${yy.toFixed(1)} ${(x + r).toFixed(1)} ${yy.toFixed(1)}H${(x + bw - r).toFixed(1)}Q${(x + bw).toFixed(1)} ${yy.toFixed(1)} ${(x + bw).toFixed(1)} ${(yy + r).toFixed(1)}V${y(0).toFixed(1)}Z" fill="url(#${isLast ? 'miGold' : 'miGreen'})"></path>`;
+    if (hh > 14) {
+      bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${(yy - 5).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="800" fill="${isLast ? '#92710f' : '#047857'}">${chartCompact(p.v)}</text>`;
+    }
+  });
+  const labels = MS.map((m, i) => `<text x="${(padL + slot * i + slot / 2).toFixed(1)}" y="${H - 9}" text-anchor="middle" font-size="8" font-weight="700" fill="${pts.some(p => p.mi === i) ? '#475569' : '#cbd5e1'}">${m}</text>`).join('');
+  const avgLine = `<line x1="${padL}" x2="${W - padR}" y1="${y(avg).toFixed(1)}" y2="${y(avg).toFixed(1)}" stroke="#b8901f" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.85"></line>`
+    + `<text x="${W - padR}" y="${(y(avg) - 4).toFixed(1)}" text-anchor="end" font-size="8.5" font-weight="800" fill="#92710f">${t('avgWord')} ${fmtBDT(Math.round(avg))}</text>`;
+  const prev = pts.length > 1 ? pts[lastIdx - 1].v : undefined;
+  const chip = pts.length > 1 && deltaChip(pts[lastIdx].v, prev)
+    ? `<div class="chart-chip">${deltaChip(pts[lastIdx].v, prev)} <span style="font-size:10px;font-weight:700;color:#64748b">${t('vsPrevMonth')}</span></div>` : '';
+  return `<div class="glass-card overflow-hidden">
+    ${chartHead(t('chartMonthlyTitle', localDigits(curYear)), t('chartMonthlySub'))}
+    <div style="padding-top:12px;padding-bottom:6px">
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('chartMonthlyTitle', curYear)}">
+        <defs>
+          <linearGradient id="miGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#059669"/></linearGradient>
+          <linearGradient id="miGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8d675"/><stop offset="1" stop-color="#c9971f"/></linearGradient>
+        </defs>
+        ${grid}${avgLine}${bars}${labels}
+      </svg>
+      ${chip}
+    </div>
+  </div>`;
+}
+
 function etaText(months) {
   const y = Math.floor(months / 12), m = months % 12;
   const parts = [];
@@ -1151,35 +1243,48 @@ function lifetimeChartHTML(curYear) {
   const head = chartHead(t('chartYearTitle', localDigits(curYear)), t('chartYearSub'));
   if (pts.length < 2) return `<div class="glass-card overflow-hidden">${head}${summary}<div class="chart-note">${t('chartNeedMore')}</div></div>`;
 
-  const W = 320, H = 196, padX = 18, top = 36, bottom = 28;
+  const W = 340, H = 226, padL = 50, padR = 14, top = 30, bottom = 30;
   const vals = pts.map(p => p.v);
   let lo = Math.min(...vals), hi = Math.max(...vals);
   if (hi === lo) { lo -= 1; hi += 1; }
   const span = hi - lo;
-  const yMin = lo - span * 0.30, yMax = hi + span * 0.55;
-  const plotH = H - top - bottom;
+  const yMin = lo - span * 0.25, yMax = hi + span * 0.35;
+  const plotH = H - top - bottom, plotW = W - padL - padR;
   const y = v => top + ((yMax - v) / (yMax - yMin)) * plotH;
-  const x = mi => padX + (mi / 11) * (W - padX * 2);
+  const x = mi => padL + (mi / 11) * plotW;
   const first = pts[0], last = pts[pts.length - 1];
   const improved = last.v >= first.v;
   const color = improved ? '#10b981' : '#ef4444';
-  const base = y(yMin);
-  const line = pts.map((p, i) => (i ? 'L' : 'M') + x(p.mi).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  const dark = improved ? '#047857' : '#b91c1c';
+  const base = top + plotH;
+  const xy = pts.map(p => [x(p.mi), y(p.v)]);
+  const line = smoothPath(xy);
   const area = line + ` L${x(last.mi).toFixed(1)} ${base.toFixed(1)} L${x(first.mi).toFixed(1)} ${base.toFixed(1)} Z`;
-  const dots = pts.map((p, i) => `<circle cx="${x(p.mi).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === pts.length - 1 ? 4.6 : 3}" fill="#fff" stroke="${color}" stroke-width="2.2"></circle>`).join('');
-  const labels = MS.map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${pts.some(p => p.mi === i) ? '#475569' : '#cbd5e1'}">${m}</text>`).join('');
 
-  let zero;
+  // grid + y-axis labels (4 even steps)
+  let grid = '';
+  for (let g = 0; g <= 3; g++) {
+    const v = yMin + ((yMax - yMin) * g) / 3, yy = y(v);
+    grid += `<line x1="${padL}" x2="${W - padR}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="#e2e8f0" stroke-dasharray="${g ? '3 4' : '0'}"></line>`
+      + `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end" font-size="8.5" font-weight="700" fill="#94a3b8">${chartCompact(v)}</text>`;
+  }
+  const labels = monthShort().map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 9}" text-anchor="middle" font-size="8" font-weight="700" fill="${pts.some(p => p.mi === i) ? '#475569' : '#cbd5e1'}">${m}</text>`).join('');
+
+  let zero = '';
   if (0 >= yMin && 0 <= yMax) {
-    zero = `<line x1="${padX}" x2="${W - padX}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="#10b981" stroke-dasharray="4 4" opacity="0.7"></line>`
-         + `<text x="${W - padX}" y="${(y(0) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="800" fill="#047857">${t('breakEvenLine')}</text>`;
+    zero = `<line x1="${padL}" x2="${W - padR}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="#10b981" stroke-width="1.2" stroke-dasharray="5 4"></line>`
+         + `<text x="${W - padR}" y="${(y(0) - 5).toFixed(1)}" text-anchor="end" font-size="8.5" font-weight="800" fill="#047857">${t('breakEvenLine')}</text>`;
   } else {
-    zero = `<text x="${W - padX}" y="15" text-anchor="end" font-size="9.5" font-weight="800" fill="#047857">${t('breakEvenTop')}</text>`;
+    zero = `<text x="${W - padR}" y="14" text-anchor="end" font-size="9" font-weight="800" fill="#047857">${t('breakEvenTop')}</text>`;
   }
 
-  const clampX = v => Math.min(Math.max(v, 44), W - 44);
-  const firstLabel = `<text x="${clampX(x(first.mi)).toFixed(1)}" y="${(y(first.v) + 18).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#64748b">${fmtBDT(first.v)}</text>`;
-  const lastLabel = `<text x="${clampX(x(last.mi)).toFixed(1)}" y="${(y(last.v) - 11).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="${improved ? '#047857' : '#b91c1c'}">${fmtBDT(last.v)}</text>`;
+  const dots = pts.map((p, i) => i === pts.length - 1 ? '' : `<circle cx="${x(p.mi).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.8" fill="#fff" stroke="${color}" stroke-width="2"></circle>`).join('');
+  const lx = x(last.mi), ly = y(last.v);
+  const pillW = Math.max(58, fmtBDT(last.v).length * 6.4 + 14), pillX = Math.min(Math.max(lx - pillW / 2, padL), W - padR - pillW);
+  const endMark = `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="9" fill="${color}" opacity="0.18"></circle>`
+    + `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4.6" fill="${color}" stroke="#fff" stroke-width="2"></circle>`
+    + `<rect x="${pillX.toFixed(1)}" y="${(ly - 33).toFixed(1)}" width="${pillW.toFixed(1)}" height="19" rx="9.5" fill="${dark}"></rect>`
+    + `<text x="${(pillX + pillW / 2).toFixed(1)}" y="${(ly - 20).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">${fmtBDT(last.v)}</text>`;
 
   const diff = last.v - first.v;
   const trendChip = Math.abs(diff) >= 1
@@ -1191,11 +1296,11 @@ function lifetimeChartHTML(curYear) {
     ${summary}
     <div style="padding-top:8px;padding-bottom:6px">
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('chartYearTitle', curYear)}">
-        <defs><linearGradient id="clArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.32"/><stop offset="1" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
-        ${zero}
+        <defs><linearGradient id="clArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.30"/><stop offset="1" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
+        ${grid}${zero}
         <path d="${area}" fill="url(#clArea)"></path>
-        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
-        ${dots}${firstLabel}${lastLabel}${labels}
+        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${dots}${endMark}${labels}
       </svg>
       ${trendChip}
     </div>
@@ -1786,6 +1891,8 @@ function renderDashboard() {
       </div>
 
       ${weeksChartHTML()}
+
+      ${monthlyIncomeChartHTML()}
 
       <div class="glass-card overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200/60 flex justify-between items-center bg-white/40">
