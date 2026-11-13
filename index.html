@@ -1309,9 +1309,7 @@ function lifetimeChartHTML(curYear) {
 
 
 // ================= Monthly report (PDF) =================
-// ===== Monthly income statement (official style) — A4 page 794 x 1123, built as SVG =====
-// model: { lang, ref, periods:[{label, weeks}], range, assumptions:{marketRate,totalMachines,singeingRate},
-//          weeks:[...], singeing:[...], generated }
+// Official-style monthly income statement — A4 page 794 x 1123, built as SVG (black / grey / white only)
 
 var REPORT_TXT = {
   en: {
@@ -1352,12 +1350,14 @@ var REPORT_TXT = {
   },
 };
 
+// Islam Weaving Factory — official-style monthly report (black / grey / white only)
+// This file replaces the old reportSvg() in index.html.
 function reportSvg(m) {
   var T = REPORT_TXT[m.lang] || REPORT_TXT.en;
   var SANS = m.fontFamily || "'Noto Sans','Noto Sans Bengali','Roboto','Segoe UI','Helvetica Neue',Arial,sans-serif";
   var SERIF = m.fontHead || "'Noto Serif','Noto Serif Bengali','Georgia','Times New Roman',serif";
   var W = 794, H = 1123, MX = 44, CW = W - 2 * MX;
-  var INK = '#1f2a24', GREEN = '#0f5c46', GREEN2 = '#0a4535', GOLD = '#b8901f', GOLDL = '#e8d9a6', LINE = '#d9cfb4', MUTE = '#6f6a58', ZEBRA = '#fbf8ee', PALE = '#f4ecd2';
+  var INK = '#111111', MUTE = '#555555', GRID = '#8a8a8a', HEADFILL = '#e4e4e4', TOTFILL = '#eeeeee', LABFILL = '#f5f5f5';
   var digits = function (s) { return m.lang === 'bn' ? String(s).replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : String(s); };
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
   var num = function (v) { return Math.round(Number(v) || 0).toLocaleString('en-IN'); };
@@ -1373,210 +1373,179 @@ function reportSvg(m) {
     o += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + stroke + '" stroke-width="' + sw + '"' + (extra || '') + '/>';
   };
   var serif = ' font-family="' + SERIF.replace(/"/g, '&quot;') + '"';
-  var weave = function (x, y, S, cid) {
-    var cnt = 5, step = S / cnt, th = step * 0.84, c, r, s = '';
-    s += '<clipPath id="' + cid + '"><rect x="' + x + '" y="' + y + '" width="' + S + '" height="' + S + '" rx="' + (S * 0.19) + '"/></clipPath><g clip-path="url(#' + cid + ')">';
-    for (c = 0; c < cnt; c++) s += '<rect x="' + (x + c * step + (step - th) / 2) + '" y="' + y + '" width="' + th + '" height="' + S + '" fill="url(#gV)"/>';
-    for (r = 0; r < cnt; r++) s += '<rect x="' + x + '" y="' + (y + r * step + (step - th) / 2) + '" width="' + S + '" height="' + th + '" fill="url(#gH)"/>';
-    for (r = 0; r < cnt; r++) for (c = 0; c < cnt; c++) {
-      if ((r + c) % 2 === 1) s += '<rect x="' + (x + c * step + (step - th) / 2) + '" y="' + (y + r * step + (step - th) / 2 - S * 0.02) + '" width="' + th + '" height="' + (th + S * 0.04) + '" fill="url(#gV)" stroke="#2f9c72" stroke-opacity="0.35" stroke-width="1"/>';
-    }
-    return s + '</g>';
-  };
-
   var sum = function (arr, k) { return arr.reduce(function (a, r) { return a + (Number(r[k]) || 0); }, 0); };
   var tot = {
     pieces: sum(m.weeks, 'totalPieces'), thaan: sum(m.weeks, 'weeklyThaan'), total: sum(m.weeks, 'totalProfit'), my: sum(m.weeks, 'myProfit'),
     two: sum(m.weeks, 'twoMachineProfit'), comb: sum(m.weeks, 'combinedProfit'), sThaan: sum(m.singeing, 'singedThaan'), sPay: sum(m.singeing, 'pay'),
   };
+  var heading = function (x, y, w, s) {
+    text(x, y, esc(s), 12, 700, INK, 'start', serif + ' letter-spacing="1"');
+    line(x, y + 6, x + w, y + 6, INK, 1);
+  };
 
-  var defs = '<defs>'
-    + '<linearGradient id="gH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fcebb8"/><stop offset="0.45" stop-color="#f6d27c"/><stop offset="1" stop-color="#e5ad48"/></linearGradient>'
-    + '<linearGradient id="gV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b6f2d6"/><stop offset="0.45" stop-color="#6fdcab"/><stop offset="1" stop-color="#3fb98a"/></linearGradient>'
-    + '<linearGradient id="gHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11694f"/><stop offset="1" stop-color="#0a4535"/></linearGradient>'
-    + '<linearGradient id="gGoldH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1dc93"/><stop offset="1" stop-color="#d9b44a"/></linearGradient>'
-    + '<linearGradient id="gBarG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c8a68"/><stop offset="1" stop-color="#0c5a43"/></linearGradient>'
-    + '<linearGradient id="gBarY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1cf6a"/><stop offset="1" stop-color="#c99a24"/></linearGradient>'
-    + '</defs>';
-
-  // ---- page, border, watermark ----
-  rect(0, 0, W, H, '#fffefa');
-  rect(14, 14, W - 28, H - 28, 'none', GOLD, 2);
-  rect(20, 20, W - 40, H - 40, 'none', GREEN, 0.8);
+  // ---- page ----
+  rect(0, 0, W, H, '#ffffff');
 
   // ---- letterhead ----
-  o += '<rect x="' + (MX - 3) + '" y="' + (40 - 3) + '" width="72" height="72" rx="15" fill="#e9dcb9" stroke="' + GOLD + '" stroke-width="1.6"/>';
-  o += weave(MX, 40, 66, 'cLogo');
-  text(MX + 88, 70, 'ISLAM WEAVING FACTORY', 21.5, 700, GREEN2, 'start', serif + ' letter-spacing="1.2"');
-  text(MX + 88, 90, 'Raiganj, Sirajganj  ·  Bangladesh', 11.5, 600, MUTE, 'start', ' letter-spacing="0.4"');
-  line(MX + 88, 98, MX + 88 + 56, 98, GOLD, 2.4);
+  text(W / 2, 62, 'ISLAM WEAVING FACTORY', 23, 700, INK, 'middle', serif + ' letter-spacing="2"');
+  text(W / 2, 82, 'Raiganj, Sirajganj, Bangladesh', 11.5, 400, MUTE, 'middle', ' letter-spacing="0.4"');
+  line(MX, 96, W - MX, 96, INK, 1.8);
+  line(MX, 100, W - MX, 100, INK, 0.6);
 
-  var px = W - MX;
-  text(px, 58, esc(T.title), 12, 700, GREEN, 'end', serif + ' letter-spacing="0.9"');
-  text(px, 76, esc(T.basis), 10.5, 600, MUTE, 'end');
-  var py = 98;
-  if (m.periods.length === 1) {
-    text(px, py + 6, esc(m.periods[0].label), 21, 800, INK, 'end', serif);
-  } else {
-    m.periods.forEach(function (p, i) {
-      text(px, py + i * 17, esc(p.label + (p.weeks ? '  ·  ' + p.weeks : '')), 13.5, 800, INK, 'end', serif);
-    });
-  }
-  line(MX, 128, W - MX, 128, GOLD, 2.2);
-  line(MX, 132, W - MX, 132, GREEN, 0.8);
+  // ---- title ----
+  text(W / 2, 130, esc(T.title), 16, 700, INK, 'middle', serif + ' letter-spacing="1.6"');
+  text(W / 2, 147, esc(T.basis), 10.5, 400, MUTE, 'middle');
+  var periodLine = m.periods.map(function (p) { return p.label + (p.weeks && m.periods.length > 1 ? ' (' + p.weeks + ')' : ''); }).join('  /  ');
+  text(W / 2, 168, esc(periodLine), 13.5, 700, INK, 'middle', serif);
 
   // ---- information grid ----
-  var gy = 146, gh = 36, gw = CW / 4;
+  var gy = 182, gh = 36, gw = CW / 4;
   var periodText = m.periods.map(function (p) { return p.label; }).join(' – ');
   var cells = [
     [T.refNo, m.ref], [T.period, periodText], [T.range, digits(m.range)], [T.generated, digits(m.generated)],
     [T.marketRate, digits(money(m.assumptions.marketRate)) + ' ' + T.perThaan], [T.machines, digits(m.assumptions.totalMachines)],
     [T.singeRate, digits(money(m.assumptions.singeingRate)) + ' ' + T.perThaan], [T.currency, T.currencyVal],
   ];
-  rect(MX, gy, CW, gh * 2, '#ffffff', LINE, 1);
-  rect(MX, gy, CW, gh * 2, 'none', '#b9ab7f', 1.1);
-  line(MX, gy + gh, W - MX, gy + gh, LINE, 1);
-  for (var gi = 1; gi < 4; gi++) line(MX + gi * gw, gy, MX + gi * gw, gy + gh * 2, LINE, 1);
+  rect(MX, gy, CW, gh * 2, LABFILL);
+  line(MX, gy + gh, W - MX, gy + gh, GRID, 0.6);
+  for (var gi = 1; gi < 4; gi++) line(MX + gi * gw, gy, MX + gi * gw, gy + gh * 2, GRID, 0.6);
+  rect(MX, gy, CW, gh * 2, 'none', INK, 1);
   cells.forEach(function (c, i) {
-    var cx = MX + (i % 4) * gw + 12, cy = gy + Math.floor(i / 4) * gh;
-    text(cx, cy + 14, esc(c[0]), 8.6, 700, MUTE, 'start', ' letter-spacing="0.9"');
-    text(cx, cy + 28, esc(c[1]), 12, 700, INK);
+    var cx = MX + (i % 4) * gw + 10, cy = gy + Math.floor(i / 4) * gh;
+    text(cx, cy + 14, esc(c[0]), 8.4, 600, MUTE, 'start', ' letter-spacing="0.8"');
+    text(cx, cy + 28, esc(c[1]), 11.5, 700, INK);
   });
 
   // ---- summary of income ----
-  var sy = 248;
-  text(MX, sy, esc(T.summary), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
-  line(MX, sy + 6, MX + 430, sy + 6, GREEN, 1.2);
+  var sy = 280, SW = 430;
+  heading(MX, sy, SW, T.summary);
   var rows = [
-    [T.thaanRow, digits(num(tot.thaan)), false],
-    [T.factoryRow(digits(m.assumptions.totalMachines)), digits(money(tot.total)), false],
-    [T.myRow, digits(money(tot.my)), true],
-    [T.twoRow, digits(money(tot.two)), false],
-    [T.singRow, digits(money(tot.sPay)), false],
+    [T.thaanRow, digits(num(tot.thaan))],
+    [T.factoryRow(digits(m.assumptions.totalMachines)), digits(money(tot.total))],
+    [T.myRow, digits(money(tot.my))],
+    [T.twoRow, digits(money(tot.two))],
+    [T.singRow, digits(money(tot.sPay))],
   ];
-  var ry0 = sy + 10, rh = 30;
-  rect(MX, ry0, 430, rh * 5, '#ffffff', LINE, 1);
+  var ry0 = sy + 12, rh = 28, ty = ry0 + rh * 5, th = 46;
+  rect(MX, ry0, SW, rh * 5 + th, '#ffffff');
   rows.forEach(function (r, i) {
     var y = ry0 + i * rh;
-    if (i % 2) rect(MX + 0.5, y, 429, rh, ZEBRA);
-    if (i) line(MX, y, MX + 430, y, LINE, 0.8);
-    rect(MX + 12, y + 11, 6, 6, r[2] ? GREEN : GOLD);
-    text(MX + 28, y + 19, esc(r[0]), 12, r[2] ? 700 : 600, INK);
-    text(MX + 416, y + 19, esc(r[1]), 13, 700, r[2] ? GREEN : INK, 'end');
+    if (i) line(MX, y, MX + SW, y, GRID, 0.5);
+    text(MX + 12, y + 18, esc(r[0]), 11.5, 400, INK);
+    text(MX + SW - 12, y + 18, esc(r[1]), 12, 600, INK, 'end');
   });
-  var ty = ry0 + rh * 5;
-  rect(MX, ty, 430, 46, 'url(#gHead)');
-  line(MX, ty + 46, MX + 430, ty + 46, GOLD, 3);
-  text(MX + 16, ty + 21, esc(T.combRow), 12.5, 700, '#ffffff', 'start', serif + ' letter-spacing="1.2"');
-  text(MX + 16, ty + 37, esc(T.combSub), 9.8, 600, '#bfe3d3');
-  text(MX + 416, ty + 32, esc(digits(money(tot.comb))), 25, 800, '#ffe28a', 'end');
-  var sumBottom = ty + 46;
+  rect(MX, ty, SW, th, TOTFILL);
+  line(MX, ty, MX + SW, ty, INK, 1.6);
+  text(MX + 12, ty + 20, esc(T.combRow), 12, 700, INK, 'start', serif + ' letter-spacing="1"');
+  text(MX + 12, ty + 36, esc(T.combSub), 9.5, 400, MUTE);
+  text(MX + SW - 12, ty + 31, esc(digits(money(tot.comb))), 20, 700, INK, 'end');
+  rect(MX, ry0, SW, rh * 5 + th, 'none', INK, 1);
+  var sumBottom = ty + th;
 
-  // chart panel (right)
-  var cx0 = MX + 446, cw0 = CW - 446, cTop = sy - 12;
-  rect(cx0, cTop, cw0, sumBottom - cTop, '#ffffff', LINE, 1);
-  text(cx0 + 14, cTop + 22, esc(T.chart), 10.5, 700, GREEN, 'start', serif + ' letter-spacing="0.9"');
-  line(cx0 + 14, cTop + 30, cx0 + cw0 - 14, cTop + 30, LINE, 1);
+  // chart (right) — grey bars
+  var cx0 = MX + SW + 16, cw0 = CW - SW - 16, cTop = ry0;
+  rect(cx0, cTop, cw0, sumBottom - cTop, '#ffffff', INK, 1);
+  text(cx0 + 12, cTop + 20, esc(T.chart), 9.6, 700, INK, 'start', serif + ' letter-spacing="0.7"');
+  line(cx0, cTop + 28, cx0 + cw0, cTop + 28, GRID, 0.6);
   var v4 = m.weeks.map(function (w) { return Number(w.combinedProfit) || 0; });
   var vmax = Math.max.apply(null, v4.concat([1])), imax = v4.indexOf(Math.max.apply(null, v4));
-  var pBot = sumBottom - 30, pTop = cTop + 58, slot = (cw0 - 28) / 4, bw = 28;
-  for (var gl = 0; gl <= 3; gl++) line(cx0 + 14, pBot - gl * (pBot - pTop) / 3, cx0 + cw0 - 14, pBot - gl * (pBot - pTop) / 3, gl ? '#ece4cb' : '#b9ab7f', gl ? 0.7 : 1, gl ? ' stroke-dasharray="3 3"' : '');
+  var pBot = sumBottom - 28, pTop = cTop + 52, slot = (cw0 - 24) / 4, bw = 26;
+  line(cx0 + 12, pBot, cx0 + cw0 - 12, pBot, INK, 1);
   v4.forEach(function (v, i) {
-    var h = Math.max(3, (v / vmax) * (pBot - pTop - 6)), bx = cx0 + 14 + slot * i + (slot - bw) / 2;
-    rect(bx, pBot - h, bw, h, i === imax ? 'url(#gBarY)' : 'url(#gBarG)', null, 0, ' rx="3"');
-    text(bx + bw / 2, pBot - h - 6, esc(digits(money(v))), 9.6, 700, i === imax ? '#8a6410' : GREEN, 'middle');
-    text(bx + bw / 2, pBot + 15, esc(digits(T.weekWord + ' ' + (i + 1))), 9.6, 600, MUTE, 'middle');
+    var h = Math.max(3, (v / vmax) * (pBot - pTop - 6)), bx = cx0 + 12 + slot * i + (slot - bw) / 2;
+    rect(bx, pBot - h, bw, h, i === imax ? '#333333' : '#9a9a9a');
+    text(bx + bw / 2, pBot - h - 5, esc(digits(money(v))), 9, 600, INK, 'middle');
+    text(bx + bw / 2, pBot + 14, esc(digits(T.weekWord + ' ' + (i + 1))), 9, 400, MUTE, 'middle');
   });
 
-  // ---- section A table ----
+  // ---- section A ----
   var aY = sumBottom + 30;
-  text(MX, aY, esc(T.secA), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
-  line(MX, aY + 6, W - MX, aY + 6, GREEN, 1.2);
+  heading(MX, aY, CW, T.secA);
   var tA = aY + 12, hA = 42, rA = 32, totA = 36, AH = hA + rA * 4 + totA;
   var cols = [58, 74, 76, 64, 52, 88, 90, 94, 110], colX = [MX];
   cols.forEach(function (w, i) { colX.push(colX[i] + w); });
-  rect(MX, tA, CW, AH, '#ffffff', '#b9ab7f', 1.1);
-  rect(MX, tA, CW, hA, 'url(#gHead)');
-  rect(colX[8], tA, cols[8], hA, 'url(#gGoldH)');
+  rect(MX, tA, CW, AH, '#ffffff');
+  rect(colX[8], tA + hA, cols[8], AH - hA, '#f6f6f6');
+  rect(MX, tA, CW, hA, HEADFILL);
   [T.week, T.date, T.pieces, T.thaan, T.rate, T.totalProfit, T.myProfit, T.twoProfit, T.comb].forEach(function (h, i) {
-    var ls = h.split('\n'), tx = i < 2 ? colX[i] + 10 : colX[i + 1] - 10, base = tA + (ls.length === 2 ? 17 : 25);
-    ls.forEach(function (ln, k) { text(tx, base + k * 13, esc(ln), 10, 700, i === 8 ? '#3d2c00' : '#ffffff', i < 2 ? 'start' : 'end', ' letter-spacing="0.3"'); });
+    var ls = h.split('\n'), tx = i < 2 ? colX[i] + 8 : colX[i + 1] - 8, base = tA + (ls.length === 2 ? 17 : 25);
+    ls.forEach(function (ln, k) { text(tx, base + k * 13, esc(ln), 9.8, 700, INK, i < 2 ? 'start' : 'end'); });
   });
   m.weeks.forEach(function (w, i) {
     var y = tA + hA + i * rA, ty2 = y + 21;
-    if (i % 2) rect(MX + 0.5, y, CW - 1, rA, ZEBRA);
-    if (i) line(MX, y, W - MX, y, LINE, 0.8);
-    text(colX[0] + 10, ty2, esc(T.week + ' ' + digits(i + 1)), 11.5, 700, INK);
-    text(colX[1] + 10, ty2, esc(digits(w.date)), 11.5, 600, '#4a4a3c');
+    if (i) line(MX, y, W - MX, y, GRID, 0.5);
+    text(colX[0] + 8, ty2, esc(T.week + ' ' + digits(i + 1)), 11, 600, INK);
+    text(colX[1] + 8, ty2, esc(digits(w.date)), 11, 400, INK);
     [num(w.totalPieces), num(w.weeklyThaan), money(m.assumptions.marketRate), money(w.totalProfit), money(w.myProfit), money(w.twoMachineProfit), money(w.combinedProfit)].forEach(function (v, k) {
       var ci = k + 2;
-      text(colX[ci + 1] - 10, ty2, esc(digits(v)), 11.5, ci === 8 ? 700 : 600, ci === 8 ? '#7a5a08' : (ci === 6 ? GREEN : INK), 'end');
+      text(colX[ci + 1] - 8, ty2, esc(digits(v)), 11, ci === 8 ? 700 : 400, INK, 'end');
     });
   });
   var tA0 = tA + hA + rA * 4;
-  rect(MX + 0.5, tA0, CW - 1, totA - 0.5, PALE);
-  line(MX, tA0, W - MX, tA0, GREEN, 1.6);
-  text(colX[0] + 10, tA0 + 22, esc(T.monthlyTotal), 11.5, 700, GREEN2, 'start', serif + ' letter-spacing="0.8"');
+  rect(MX, tA0, CW, totA, TOTFILL);
+  line(MX, tA0, W - MX, tA0, INK, 1.4);
+  text(colX[0] + 8, tA0 + 22, esc(T.monthlyTotal), 11, 700, INK, 'start', serif + ' letter-spacing="0.6"');
   [num(tot.pieces), num(tot.thaan), '—', money(tot.total), money(tot.my), money(tot.two), money(tot.comb)].forEach(function (v, k) {
-    text(colX[k + 3] - 10, tA0 + 22, esc(digits(v)), 12, 700, GREEN2, 'end');
+    text(colX[k + 3] - 8, tA0 + 22, esc(digits(v)), 11.5, 700, INK, 'end');
   });
-  for (var ci2 = 1; ci2 < 9; ci2++) line(colX[ci2], tA, colX[ci2], tA + AH, ci2 === 8 ? GOLD : '#e6dec4', 0.7, ' opacity="0.9"');
+  for (var ci2 = 1; ci2 < 9; ci2++) line(colX[ci2], tA, colX[ci2], ci2 < 3 ? tA0 : tA + AH, GRID, 0.5);
+  line(MX, tA + hA, W - MX, tA + hA, INK, 1);
+  rect(MX, tA, CW, AH, 'none', INK, 1);
 
-  // ---- section B table (left) + notes (right) ----
-  var bY = tA + AH + 30;
-  text(MX, bY, esc(T.secB), 12.5, 700, GREEN, 'start', serif + ' letter-spacing="1.2"');
-  line(MX, bY + 6, MX + 400, bY + 6, GREEN, 1.2);
-  var tB = bY + 12, hB = 32, rB = 29, totB = 34, BH = hB + rB * 4 + totB, BW = 400;
+  // ---- section B + notes ----
+  var bY = tA + AH + 30, BW = 400;
+  heading(MX, bY, BW, T.secB);
+  var tB = bY + 12, hB = 32, rB = 29, totB = 34, BH = hB + rB * 4 + totB;
   var bc = [74, 96, 114, 116], bx = [MX];
   bc.forEach(function (w, i) { bx.push(bx[i] + w); });
-  rect(MX, tB, BW, BH, '#ffffff', '#b9ab7f', 1.1);
-  rect(MX, tB, BW, hB, 'url(#gHead)');
+  rect(MX, tB, BW, BH, '#ffffff');
+  rect(MX, tB, BW, hB, HEADFILL);
   [T.week, T.date, T.singed, T.pay].forEach(function (h, i) {
-    text(i < 2 ? bx[i] + 10 : bx[i + 1] - 10, tB + 21, esc(h), 10, 700, '#ffffff', i < 2 ? 'start' : 'end', ' letter-spacing="0.3"');
+    text(i < 2 ? bx[i] + 8 : bx[i + 1] - 8, tB + 21, esc(h), 9.8, 700, INK, i < 2 ? 'start' : 'end');
   });
   m.singeing.forEach(function (s, i) {
     var y = tB + hB + i * rB;
-    if (i % 2) rect(MX + 0.5, y, BW - 1, rB, ZEBRA);
-    if (i) line(MX, y, MX + BW, y, LINE, 0.8);
-    text(bx[0] + 10, y + 18, esc(T.week + ' ' + digits(i + 1)), 11.5, 700, INK);
-    text(bx[1] + 10, y + 18, esc(digits(s.date)), 11.5, 600, '#4a4a3c');
-    text(bx[3] - 10, y + 18, esc(digits(num(s.singedThaan))), 11.5, 600, INK, 'end');
-    text(bx[4] - 10, y + 18, esc(digits(money(s.pay))), 11.5, 700, '#7a5a08', 'end');
+    if (i) line(MX, y, MX + BW, y, GRID, 0.5);
+    text(bx[0] + 8, y + 18, esc(T.week + ' ' + digits(i + 1)), 11, 600, INK);
+    text(bx[1] + 8, y + 18, esc(digits(s.date)), 11, 400, INK);
+    text(bx[3] - 8, y + 18, esc(digits(num(s.singedThaan))), 11, 400, INK, 'end');
+    text(bx[4] - 8, y + 18, esc(digits(money(s.pay))), 11, 600, INK, 'end');
   });
   var tB0 = tB + hB + rB * 4;
-  rect(MX + 0.5, tB0, BW - 1, totB - 0.5, PALE);
-  line(MX, tB0, MX + BW, tB0, GREEN, 1.6);
-  text(bx[0] + 10, tB0 + 21, esc(T.monthlyTotal), 11.5, 700, GREEN2, 'start', serif + ' letter-spacing="0.8"');
-  text(bx[3] - 10, tB0 + 21, esc(digits(num(tot.sThaan))), 12, 700, GREEN2, 'end');
-  text(bx[4] - 10, tB0 + 21, esc(digits(money(tot.sPay))), 12, 700, GREEN2, 'end');
+  rect(MX, tB0, BW, totB, TOTFILL);
+  line(MX, tB0, MX + BW, tB0, INK, 1.4);
+  text(bx[0] + 8, tB0 + 21, esc(T.monthlyTotal), 11, 700, INK, 'start', serif + ' letter-spacing="0.6"');
+  text(bx[3] - 8, tB0 + 21, esc(digits(num(tot.sThaan))), 11.5, 700, INK, 'end');
+  text(bx[4] - 8, tB0 + 21, esc(digits(money(tot.sPay))), 11.5, 700, INK, 'end');
+  for (var bi = 1; bi < 4; bi++) line(bx[bi], tB, bx[bi], bi < 2 ? tB0 : tB + BH, GRID, 0.5);
+  line(MX, tB + hB, MX + BW, tB + hB, INK, 1);
+  rect(MX, tB, BW, BH, 'none', INK, 1);
 
   var nx = MX + BW + 22, nw = CW - BW - 22;
-  text(nx, bY, esc(T.notes), 11.5, 700, GREEN, 'start', serif + ' letter-spacing="1"');
-  line(nx, bY + 6, nx + nw, bY + 6, GREEN, 1.2);
-  rect(nx, tB, nw, BH, '#fffdf5', LINE, 1);
+  heading(nx, bY, nw, T.notes);
+  rect(nx, tB, nw, BH, '#ffffff', INK, 1);
   var ny = tB + 24;
   T.notesList.forEach(function (ln) {
-    ln.forEach(function (s) { text(nx + 14, ny, esc(s), 9.8, 600, '#4a4a3c', 'start', ' xml:space="preserve"'); ny += 14; });
+    ln.forEach(function (s) { text(nx + 12, ny, esc(s), 9.6, 400, '#333333', 'start', ' xml:space="preserve"'); ny += 14; });
     ny += 8;
   });
 
   // ---- signatures ----
-  var sgY = tB + BH + 58, sw = (CW - 2 * 40) / 3;
+  var sgY = tB + BH + 46, sw = (CW - 2 * 40) / 3;
   [T.preparedBy, T.verifiedBy, T.approvedBy].forEach(function (lb, i) {
     var x = MX + i * (sw + 40);
     line(x, sgY, x + sw, sgY, INK, 0.9);
     text(x + sw / 2, sgY + 15, esc(lb), 10.5, 700, INK, 'middle', serif);
-    text(x + sw / 2, sgY + 28, esc(T.signLine), 8.8, 600, MUTE, 'middle');
+    text(x + sw / 2, sgY + 28, esc(T.signLine), 8.8, 400, MUTE, 'middle');
   });
 
   // ---- footer ----
   var fy = H - 62;
-  line(MX, fy, W - MX, fy, GOLD, 1.4);
-  line(MX, fy + 3, W - MX, fy + 3, GREEN, 0.6);
-  text(MX, fy + 20, 'ISLAM WEAVING FACTORY  ·  Raiganj, Sirajganj  ·  ' + esc(T.confidential), 8.8, 600, MUTE);
-  text(W - MX, fy + 20, esc(T.page), 8.8, 700, MUTE, 'end');
+  line(MX, fy, W - MX, fy, INK, 1);
+  text(MX, fy + 18, 'ISLAM WEAVING FACTORY  ·  Raiganj, Sirajganj  ·  ' + esc(T.confidential), 8.8, 400, MUTE);
+  text(W - MX, fy + 18, esc(T.page), 8.8, 600, MUTE, 'end');
 
-  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="' + SANS.replace(/"/g, '&quot;') + '">' + defs + o + '</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="' + SANS.replace(/"/g, '&quot;') + '">' + o + '</svg>';
 }
 
 
