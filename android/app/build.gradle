@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.islamweaving.dashboard'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.islamweaving.dashboard'
+        minSdk 29
+        targetSdk 34
+        // every GitHub build gets a higher number, so the phone always accepts it as an update
+        versionCode((project.findProperty('vCode') ?: '1') as int)
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../../islamweaving.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias 'islamweaving'
+            keyPassword System.getenv('KEYSTORE_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
