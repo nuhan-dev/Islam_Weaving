@@ -571,6 +571,10 @@ button, a, .nav-tab { touch-action: manipulation; }
   #toast.show { transform: translate(-50%, 0); }
 }
 
+#toast.act { display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: auto; }
+#toast.act::before { content: none; }
+#toast.act button { background: none; border: 0; color: #ffd479; font-weight: 700; font-size: 14px; padding: 4px 4px 4px 12px; }
+
 /* syncing: soft pulse instead of rolling numbers */
 @keyframes cu-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 .is-syncing .cu { animation: cu-pulse 1.1s ease-in-out infinite; }
@@ -671,6 +675,8 @@ const I18N = {
     reportDownload: 'PDF ডাউনলোড',
     reportShare: 'শেয়ার করুন',
     reportSaved: 'PDF ডাউনলোড হয়েছে ✓',
+    reportSavedDl: 'PDF সেভ হয়েছে (Downloads)',
+    reportOpen: 'খুলুন',
     reportFail: 'PDF বানানো যায়নি — আবার চেষ্টা করুন',
     reportNoData: 'আগে ডেটা সিঙ্ক হতে দিন',
     chartYearSub: 'প্রতি মাসের শেষে মোট লাভ/ক্ষতি — ওঠানামা বোঝাতে স্কেল বড় করে দেখানো হয়েছে',
@@ -744,6 +750,8 @@ const I18N = {
     reportDownload: 'Download PDF',
     reportShare: 'Share',
     reportSaved: 'PDF downloaded ✓',
+    reportSavedDl: 'PDF saved to Downloads',
+    reportOpen: 'Open',
     reportFail: 'Could not create the PDF — please try again',
     reportNoData: 'Let the data sync first',
     chartYearSub: 'Total profit / loss at each month end — scale zoomed in to show the movement',
@@ -1742,6 +1750,26 @@ function jpegToPdf(jpg, wPx, hPx) {
   return new Blob(parts, { type: 'application/pdf' });
 }
 
+// Android app: called after the PDF is saved into Downloads — shows a message with an "Open" button
+window.onPdfSaved = function (ok, uri) {
+  if (!ok) { showToast(t('reportFail'), 'err'); return; }
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = '';
+  const msg = document.createElement('span');
+  msg.textContent = t('reportSavedDl');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = t('reportOpen');
+  btn.onclick = () => { try { window.Android.openPdf(uri); } catch (e) {} };
+  el.appendChild(msg);
+  el.appendChild(btn);
+  el.className = 'show ok act';
+  haptic(30);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 8000);
+};
+
 function reportFileName() {
   const groups = getCycleInfo();
   const tag = groups ? groups.map(g => MONTH_NAMES[g.m].slice(0, 3) + '-' + g.y).join('_') : 'Report';
@@ -1757,6 +1785,17 @@ async function downloadReport(share) {
     const jpg = await renderReportJpeg(reportSvg(buildReportModel(reportLang)));
     const blob = jpegToPdf(jpg.bytes, jpg.w, jpg.h);
     const name = reportFileName();
+    // Inside the Android app the PDF is handed to the app, which saves it to Downloads (or opens the share sheet)
+    if (window.Android && window.Android.savePdf) {
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result).split(',')[1]);
+        fr.onerror = rej;
+        fr.readAsDataURL(blob);
+      });
+      window.Android.savePdf(name, b64, !!share);
+      return;
+    }
     if (share && typeof File !== 'undefined' && navigator.canShare) {
       const file = new File([blob], name, { type: 'application/pdf' });
       if (navigator.canShare({ files: [file] })) {
@@ -1781,7 +1820,7 @@ async function downloadReport(share) {
 }
 
 function reportCardHTML() {
-  const canShare = typeof File !== 'undefined' && !!navigator.canShare;
+  const canShare = (typeof File !== 'undefined' && !!navigator.canShare) || !!(window.Android && window.Android.savePdf);
   const chip = (code, label) => `<button type="button" class="rep-chip${reportLang === code ? ' on' : ''}" onclick="setReportLang('${code}')">${label}</button>`;
   return `<div class="glass-card p-6 border-l-4 border-l-luxuryGold-500">
       <div class="rep-head">
