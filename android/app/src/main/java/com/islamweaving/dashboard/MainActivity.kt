@@ -108,6 +108,22 @@ class MainActivity : Activity() {
             runOnUiThread { web.loadUrl(home) }
         }
 
+        // "Open" button of the page: shows the saved PDF in any PDF viewer
+        @JavascriptInterface
+        fun openPdf(uriText: String) {
+            runOnUiThread {
+                try {
+                    val view = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(Uri.parse(uriText), "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(view, "PDF"))
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "PDF দেখার অ্যাপ পাওয়া যায়নি। Downloads ফোল্ডারে ফাইলটা আছে।", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         // The page sends the finished PDF here (base64). It is saved into Downloads and then opened or shared.
         @JavascriptInterface
         fun savePdf(name: String, base64: String, share: Boolean) {
@@ -123,28 +139,23 @@ class MainActivity : Activity() {
                         ?: throw Exception("insert failed")
                     contentResolver.openOutputStream(uri)!!.use { it.write(bytes) }
                     runOnUiThread {
-                        try {
-                            if (share) {
+                        if (share) {
+                            try {
                                 val send = Intent(Intent.ACTION_SEND).apply {
                                     type = "application/pdf"
                                     putExtra(Intent.EXTRA_STREAM, uri)
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
                                 startActivity(Intent.createChooser(send, name))
-                            } else {
-                                Toast.makeText(this@MainActivity, "Downloads ফোল্ডারে সেভ হয়েছে", Toast.LENGTH_LONG).show()
-                                val view = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, "application/pdf")
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                startActivity(view)
+                            } catch (e: Exception) {
                             }
-                        } catch (e: Exception) {
+                        } else {
+                            web.evaluateJavascript("window.onPdfSaved && window.onPdfSaved(true,'" + uri.toString() + "')", null)
                         }
                     }
                 } catch (e: Exception) {
                     runOnUiThread {
-                        Toast.makeText(this@MainActivity, "PDF সেভ করা যায়নি", Toast.LENGTH_LONG).show()
+                        web.evaluateJavascript("window.onPdfSaved && window.onPdfSaved(false,'')", null)
                     }
                 }
             }.start()
