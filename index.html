@@ -593,16 +593,18 @@ button, a, .nav-tab { touch-action: manipulation; }
 .remind-later { border: 0; background: transparent; color: #6b5420; font-weight: 700; font-size: 13.5px; padding: 10px 14px; border-radius: 9999px; }
 
 /* news-ticker style reminder */
-.ticker { display: flex; align-items: center; gap: 10px; background: #322f27; color: #f7f2e4; border-radius: 16px; padding: 8px 8px 8px 8px; box-shadow: 0 4px 14px rgba(50,47,39,.28); overflow: hidden; animation: tick-in .4s cubic-bezier(.2,0,0,1) both; }
+.ticker { display: flex; flex-direction: column; gap: 10px; background: #322f27; color: #f7f2e4; border-radius: 16px; padding: 10px 10px 13px 10px; box-shadow: 0 4px 14px rgba(50,47,39,.28); overflow: hidden; animation: tick-in .4s cubic-bezier(.2,0,0,1) both; }
 @keyframes tick-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.tick-head { display: flex; align-items: center; gap: 8px; }
+.tick-head .tick-label { margin-right: auto; }
 .tick-label { flex: none; display: inline-flex; align-items: center; gap: 7px; background: #d93025; color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: .03em; padding: 7px 11px; border-radius: 10px; }
 .tick-label .ping-dot { width: 7px; height: 7px; }
-.tick-track { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%); }
+.tick-track { width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%); }
 .tick-move { display: inline-flex; white-space: nowrap; animation: tick-run 22s linear infinite; will-change: transform; }
 .tick-move span { padding-right: 56px; font-size: 14px; font-weight: 500; }
 .tick-track:active .tick-move { animation-play-state: paused; }
 @keyframes tick-run { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.tick-pdf { flex: none; display: inline-flex; align-items: center; gap: 5px; background: #ffd479; color: #3a2a00; border: 0; border-radius: 12px; padding: 8px 12px; font-size: 13px; }
+.tick-pdf { flex: none; display: inline-flex; align-items: center; gap: 5px; background: #ffd479; color: #3a2a00; border: 0; border-radius: 12px; padding: 7px 12px; font-size: 13px; }
 .tick-pdf b { font-weight: 800; }
 .tick-pdf.btn-loading::before { border-color: rgba(58,42,0,.3); border-top-color: #3a2a00; margin-right: 6px; }
 .tick-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #f7f2e4; font-size: 20px; line-height: 1; }
@@ -1920,10 +1922,12 @@ function reminderHTML() {
   const msg = t('remindTitle') + ' — ' + t('remindText');
   const dl = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>';
   return `<div class="ticker" role="status">
-    <span class="tick-label">${pingDot()}${t('remindLabel')}</span>
+    <div class="tick-head">
+      <span class="tick-label">${pingDot()}${t('remindLabel')}</span>
+      <button type="button" class="tick-pdf" data-save="report" onclick="downloadReport(false)" aria-label="${t('reportDownload')}">${dl}<b>PDF</b></button>
+      <button type="button" class="tick-x" onclick="snoozeReminder()" aria-label="${t('remindLater')}">×</button>
+    </div>
     <div class="tick-track"><div class="tick-move"><span>${msg}</span><span aria-hidden="true">${msg}</span></div></div>
-    <button type="button" class="tick-pdf" data-save="report" onclick="downloadReport(false)" aria-label="${t('reportDownload')}">${dl}<b>PDF</b></button>
-    <button type="button" class="tick-x" onclick="snoozeReminder()" aria-label="${t('remindLater')}">×</button>
   </div>`;
 }
 
@@ -2031,13 +2035,14 @@ const CLOSE_SVG = '<svg class="ico-x" viewBox="0 0 24 24" fill="none" stroke="cu
 // An amount box: empty and editable until a value is saved; after that it is locked until the pen is tapped
 function lockBox(id, saved, cls, placeholder, extra, kind) {
   const isText = kind === 'text';
+  const isDec = kind === 'decimal';
   const has = isText
     ? (saved !== null && saved !== undefined && String(saved).trim() !== '')
     : (saved !== '' && saved !== null && saved !== undefined && Number(saved) !== 0 && !isNaN(Number(saved)));
   const editing = has && unlockedFields.has(id);
   const locked = has && !editing;
   return `<div class="lock-wrap${extra ? ' ' + extra : ''}${editing ? ' is-editing' : ''}">
-    <input class="${cls}${locked ? ' is-locked' : ''}" id="${id}" type="${isText ? 'text' : 'number'}"${isText ? '' : ' inputmode="numeric"'} value="${has ? saved : ''}"${locked ? ' readonly' : ''} />
+    <input class="${cls}${locked ? ' is-locked' : ''}" id="${id}" type="${isText ? 'text' : 'number'}"${isText ? '' : (isDec ? ' inputmode="decimal" step="any"' : ' inputmode="numeric" step="any"')} value="${has ? saved : ''}"${locked ? ' readonly' : ''} />
     ${has ? `<button type="button" class="pen-btn" onclick="togglePen('${id}')" aria-label="${t('editLabel')}">${PEN_SVG}${CLOSE_SVG}</button>` : ''}
   </div>`;
 }
@@ -2222,15 +2227,15 @@ function renderDashboard() {
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('assumpMarket')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="assump-market" type="number" value="${data.assumptions.marketRate}" />
+            ${lockBox('assump-market', data.assumptions.marketRate, 'input-field w-full text-sm font-bold text-brand-900', '', '', 'decimal')}
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('assumpMachines')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="assump-machines" type="number" value="${data.assumptions.totalMachines}" />
+            ${lockBox('assump-machines', data.assumptions.totalMachines, 'input-field w-full text-sm font-bold text-brand-900', '')}
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">${t('assumpSingeing')}</label>
-            <input class="input-field w-full text-sm font-bold text-brand-900" id="assump-singeing" type="number" value="${data.assumptions.singeingRate}" />
+            ${lockBox('assump-singeing', data.assumptions.singeingRate, 'input-field w-full text-sm font-bold text-brand-900', '', '', 'decimal')}
           </div>
         </div>
         <button class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" data-save="assump" onclick="saveAssumptions()">${t('btnSaveAssump')}</button>
@@ -2252,6 +2257,7 @@ async function saveAssumptions() {
   if (bigChange(oldA.singeingRate, singeingRate) && !(await askConfirm(t('oddRate', t('assumpSingeing'), localDigits(oldA.singeingRate), localDigits(singeingRate))))) return;
   await pushAction({ action: 'updateAssumptions', marketRate, totalMachines, singeingRate }, {
     key: 'assump',
+    lockIds: ['assump-market', 'assump-machines', 'assump-singeing'],
     apply: () => { Object.assign(data.assumptions, { marketRate, totalMachines, singeingRate }); },
   });
 }
