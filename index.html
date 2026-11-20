@@ -610,6 +610,18 @@ button, a, .nav-tab { touch-action: manipulation; }
 .tick-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #f7f2e4; font-size: 20px; line-height: 1; }
 @media (prefers-reduced-motion: reduce) { .tick-move { animation: none; } .tick-move span:last-child { display: none; } .tick-track { overflow-x: auto; } }
 
+/* always-on news ticker (slim); the PDF notice uses the two-row .alert layout */
+#newsTicker { padding-bottom: 8px; }
+#newsTicker[hidden] { display: none; }
+.ticker.news { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; box-shadow: none; }
+.ticker.news .tick-label { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
+.ticker.news .tick-track { flex: 1 1 auto; width: auto; }
+.tick-move .tk-copy { display: inline-flex; align-items: center; flex: none; min-width: min(100vw, 640px); padding-right: 40px; }
+.tick-move .tk-item { font-size: 13.5px; font-weight: 500; white-space: nowrap; padding: 0; }
+.tick-move .tk-item em { font-style: normal; font-size: 11.5px; color: #ffd479; margin-left: 4px; opacity: .9; }
+.tick-move .tk-dot { color: #d93025; font-size: 9px; padding: 0 16px; }
+.ticker.alert .tick-move .tk-item { font-size: 14px; }
+
 /* syncing: soft pulse instead of rolling numbers */
 @keyframes cu-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 .is-syncing .cu { animation: cu-pulse 1.1s ease-in-out infinite; }
@@ -644,6 +656,7 @@ button, a, .nav-tab { touch-action: manipulation; }
     </button>
   </div>
 </header>
+<div id="newsTicker" class="max-w-5xl mx-auto px-4" hidden></div>
 
 <div class="tabbar">
   <nav class="tabbar-nav max-w-5xl mx-auto px-4 flex gap-2 overflow-x-auto no-scrollbar">
@@ -744,6 +757,7 @@ const I18N = {
     remindText: 'শিটের তারিখ বদলানোর আগে এই সাইকেলের PDF রিপোর্ট নিয়ে রাখুন।',
     remindLater: 'পরে',
     remindLabel: 'নোটিশ',
+    newsLabel: 'শীর্ষ খবর',
     badNumber: 'সংখ্যাটা ঠিক নয় — ০ বা তার বেশি সংখ্যা দিন',
     badDate: 'তারিখ ঠিক নয় — দিন.মাস.বছর লিখুন',
     badRate: 'রেট বা মেশিন সংখ্যা ০ হতে পারবে না',
@@ -835,6 +849,7 @@ const I18N = {
     remindText: 'Download this cycle\'s PDF report before you change the dates in the sheet.',
     remindLater: 'Later',
     remindLabel: 'Notice',
+    newsLabel: 'Top news',
     badNumber: 'Not a valid number — enter 0 or more',
     badDate: 'Date is not valid — use day.month.year',
     badRate: 'Rate or machine count cannot be 0',
@@ -1897,38 +1912,75 @@ function cycleReminderInfo() {
 }
 function markPdfDone() {
   try { const c = cycleReminderInfo(); if (c) localStorage.setItem('pdfDone', c.key); } catch (e) {}
-  document.querySelectorAll('.remind,.ticker').forEach(el => el.remove());
+  renderTicker();
 }
-function snoozeReminder() {
-  try { localStorage.setItem('remindSnooze', new Date().toDateString()); } catch (e) {}
-  document.querySelectorAll('.remind,.ticker').forEach(el => el.remove());
-}
-function reminderHTML() {
+// true from the day week 4 is entered until the PDF has been downloaded
+function pdfReminderActive() {
   const c = cycleReminderInfo();
-  if (!c) return '';
-  const now = new Date();
-  // shows as soon as week 4's data has been entered
-  if (!(data.weeks[3] && Number(data.weeks[3].totalPieces) > 0)) return '';
+  if (!c || !data || !data.weeks) return false;
+  if (!(data.weeks[3] && Number(data.weeks[3].totalPieces) > 0)) return false;
   try {
     // week 4 must have been entered in THIS cycle (old numbers left in the sheet must not trigger it)
     let k4 = localStorage.getItem('wk4Key');
     if (k4 === null) { localStorage.setItem('wk4Key', c.key); k4 = c.key; }
-    if (k4 !== c.key) return '';
+    if (k4 !== c.key) return false;
+    if (localStorage.getItem('pdfDone') === c.key) return false;
   } catch (e) {}
-  try {
-    if (localStorage.getItem('pdfDone') === c.key) return '';
-    if (localStorage.getItem('remindSnooze') === now.toDateString()) return '';
-  } catch (e) {}
-  const msg = t('remindTitle') + ' — ' + t('remindText');
+  return true;
+}
+
+// ---- news ticker: Bangladesh headlines all the time; the PDF notice takes over until the PDF is downloaded ----
+const NEWS_URLS = ['https://raw.githubusercontent.com/nuhan-dev/Islam_Weaving/main/news.json', 'news.json'];
+let newsItems = [];
+let tickerSig = '';
+try { const nc = JSON.parse(localStorage.getItem('newsCache') || 'null'); if (nc && Array.isArray(nc.items)) newsItems = nc.items; } catch (e) {}
+
+function escHtml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function renderTicker() {
+  const box = document.getElementById('newsTicker');
+  if (!box) return;
+  const alert = pdfReminderActive();
+  let body = '', chars = 0;
+  if (alert) {
+    const msg = t('remindTitle') + ' — ' + t('remindText');
+    body = '<span class="tk-item">' + escHtml(msg) + '</span>';
+    chars = msg.length;
+  } else if (newsItems.length) {
+    body = newsItems.map(n => { chars += n.t.length + (n.s ? n.s.length : 0) + 6; return '<span class="tk-item">' + escHtml(n.t) + (n.s ? ' <em>' + escHtml(n.s) + '</em>' : '') + '</span>'; }).join('<span class="tk-dot">◆</span>');
+  }
+  if (!body) { box.hidden = true; tickerSig = ''; return; }
+  const sig = (alert ? 'a' : 'n') + lang + body;
+  box.hidden = false;
+  if (sig === tickerSig) { applyPending(); return; }
+  tickerSig = sig;
+  const dur = Math.max(14, Math.round(chars * 0.13));
   const dl = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>';
-  return `<div class="ticker" role="status">
-    <div class="tick-head">
-      <span class="tick-label">${pingDot()}${t('remindLabel')}</span>
-      <button type="button" class="tick-pdf" data-save="report" onclick="downloadReport(false)" aria-label="${t('reportDownload')}">${dl}<b>PDF</b></button>
-      <button type="button" class="tick-x" onclick="snoozeReminder()" aria-label="${t('remindLater')}">×</button>
-    </div>
-    <div class="tick-track"><div class="tick-move"><span>${msg}</span><span aria-hidden="true">${msg}</span></div></div>
-  </div>`;
+  const track = '<div class="tick-track"><div class="tick-move" style="animation-duration:' + dur + 's"><span class="tk-copy">' + body + '</span><span class="tk-copy" aria-hidden="true">' + body + '</span></div></div>';
+  if (alert) {
+    box.innerHTML = '<div class="ticker alert" role="status"><div class="tick-head"><span class="tick-label">' + pingDot() + t('remindLabel') + '</span>'
+      + '<button type="button" class="tick-pdf" data-save="report" onclick="downloadReport(false)" aria-label="' + t('reportDownload') + '">' + dl + '<b>PDF</b></button></div>' + track + '</div>';
+  } else {
+    box.innerHTML = '<div class="ticker news" role="marquee"><span class="tick-label">' + pingDot() + t('newsLabel') + '</span>' + track + '</div>';
+  }
+  applyPending();
+}
+
+async function loadNews() {
+  if (!navigator.onLine) return;
+  for (const u of NEWS_URLS) {
+    try {
+      const r = await fetchWithTimeout(u + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }, 8000);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j && Array.isArray(j.items) && j.items.length) {
+        newsItems = j.items.filter(n => n && n.t).slice(0, 16);
+        try { localStorage.setItem('newsCache', JSON.stringify({ items: newsItems, updated: j.updated })); } catch (e) {}
+        renderTicker();
+        return;
+      }
+    } catch (e) {}
+  }
 }
 
 function aboutCardHTML() {
@@ -2097,6 +2149,7 @@ function renderAll() {
 
 function renderAllRaw() {
   applyStaticText();
+  renderTicker();
   renderDashboard();
   renderProduction();
   renderSingeing();
@@ -2158,7 +2211,6 @@ function renderDashboard() {
 
   el.innerHTML = `
     <div class="space-y-6">
-      ${reminderHTML()}
       <div class="fintech-hero text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div class="hero-head">
           <div class="hero-title-row">
@@ -2312,7 +2364,7 @@ async function saveWeek(i) {
   });
   if (saved && i === 3 && piecesVal !== '' && totalPieces > 0) {
     try { const c = cycleReminderInfo(); if (c) localStorage.setItem('wk4Key', c.key); } catch (e) {}
-    renderDashboard();
+    renderTicker();
   }
 }
 
@@ -2608,10 +2660,13 @@ if (scriptUrl) {
 }
 updateOnlineBar();
 setTimeout(hideSplashSoon, 3000);
+loadNews();
+setInterval(loadNews, 30 * 60 * 1000);
 
 window.addEventListener('online', () => { updateOnlineBar(); if (scriptUrl) fetchFromSheet(); });
 window.addEventListener('offline', updateOnlineBar);
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') loadNews();
   if (document.visibilityState === 'visible' && scriptUrl && navigator.onLine && Date.now() - lastSync > 60000) fetchFromSheet();
 });
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
