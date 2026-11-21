@@ -657,7 +657,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .wc-title { padding: 10px 6px; text-align: center; color: #fff; font-weight: 800; font-size: 1.02rem; line-height: 1.3; }
 .wc-cols, .wc-row { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; text-align: center; }
 .wc-cols { color: #fff; font-weight: 800; font-size: .8rem; padding: 7px 3px; }
-.wc-row { padding: 9px 3px; font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
+.wc-row { padding: 10px 3px; font-weight: 800; font-size: 1.2rem; line-height: 1.25; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
 .wc-foot { display: flex; justify-content: center; gap: 10px; padding: 9px 8px; background: #fbf8ef; border-top: 1px solid var(--outline); }
 .wc-btn { border: 1.5px solid #cbbf9d; background: #fff; color: #3f2f0f; font-weight: 700; font-size: 12.5px; padding: 7px 16px; border-radius: 9999px; }
 .wc-btn.danger { color: #a3262b; border-color: #e7b9b9; }
@@ -790,7 +790,7 @@ const I18N = {
     wRowFirst: n => `${n} পিস পর্যন্ত`, wRow: n => `${n} পিস`,
     wName: 'তালিকার নাম', wColor: 'রং', wAddRow: '+ সারি যোগ করুন', wSave: 'সেভ করুন', wCancel: 'বাতিল', wDelete: 'তালিকা মুছুন',
     wDeleteAsk: n => `"${n}" তালিকাটা মুছে ফেলবেন?`, wNoName: 'তালিকার নাম লিখুন', wBadRow: 'প্রতিটা সারিতে পিস আর রেট সংখ্যায় লিখুন',
-    wDrag: 'ধরে টেনে সাজান', wDragHint: 'বাঁয়ের ⋮⋮ চিহ্ন ধরে উপর-নিচে টেনে সারির ক্রম বদলান।', wDup: 'একই পিস দুইবার আছে', wEmpty: 'কোনো তালিকা নেই। উপরে "নতুন তালিকা" চাপুন।', wDelRow: 'সারি মুছুন',
+    wDrag: 'ধরে টেনে সাজান', wDragHint: 'সেভ করলে সারিগুলো পিস অনুযায়ী ছোট থেকে বড় ক্রমে নিজে সাজবে। নিজের মতো সাজাতে বাঁয়ের ⋮⋮ চিহ্ন ধরে উপর-নিচে টানুন, তখন আপনার ক্রমই থাকবে।', wDup: 'একই পিস দুইবার আছে', wEmpty: 'কোনো তালিকা নেই। উপরে "নতুন তালিকা" চাপুন।', wDelRow: 'সারি মুছুন',
     clearPiecesAsk: n => `সপ্তাহ ${n}-এর মোট পিস মুছে ফেলবেন? ওই সপ্তাহের থান আর সব প্রফিট ফাঁকা হয়ে যাবে।`,
     badPieces: 'মোট পিস ঠিক সংখ্যায় লিখুন',
     reportTitle: 'মাসিক রিপোর্ট (PDF)',
@@ -900,7 +900,7 @@ const I18N = {
     wRowFirst: n => `Up to ${n} pcs`, wRow: n => `${n} pcs`,
     wName: 'Chart name', wColor: 'Colour', wAddRow: '+ Add row', wSave: 'Save', wCancel: 'Cancel', wDelete: 'Delete chart',
     wDeleteAsk: n => `Delete the chart "${n}"?`, wNoName: 'Enter a chart name', wBadRow: 'Enter pieces and rate as numbers in every row',
-    wDrag: 'Drag to reorder', wDragHint: 'Hold the ⋮⋮ handle on the left and drag a row up or down.', wDup: 'The same pieces value appears twice', wEmpty: 'No charts yet. Tap "New chart" above.', wDelRow: 'Remove row',
+    wDrag: 'Drag to reorder', wDragHint: 'On save, rows are sorted from small to big pieces. To set your own order, drag a row by the ⋮⋮ handle; your order is then kept.', wDup: 'The same pieces value appears twice', wEmpty: 'No charts yet. Tap "New chart" above.', wDelRow: 'Remove row',
     clearPiecesAsk: n => `Clear the total pieces of week ${n}? Thaan and all profits of that week will become blank.`,
     badPieces: 'Enter total pieces as a valid number',
     reportTitle: 'Monthly report (PDF)',
@@ -2011,7 +2011,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2770,6 +2770,9 @@ function wageStartEdit(idx) {
   const c = wageCharts()[idx];
   if (!c) return;
   wageEdit = { idx, isNew: false, draft: JSON.parse(JSON.stringify(c)) };
+  // a chart that was saved in a hand-made (non ascending) order keeps that order unless it is dragged again
+  const ps = (c.rows || []).map(r => Number(r.pieces));
+  wageEdit.draft._keep = ps.some((v, i) => i > 0 && v < ps[i - 1]);
   renderWages();
   wageFocusEditor();
 }
@@ -2840,6 +2843,7 @@ function wageDelRow(i) {
     if (!wageEdit) return;
     const rows = wageEdit.draft.rows;
     const order = Array.from(box.querySelectorAll('.wc-erow')).sort((a, b) => Number(a.style.order) - Number(b.style.order)).map(r => Number(r.dataset.i));
+    if (order.some((v, i) => v !== i)) wageEdit.draft._keep = true;      // the user moved a row by hand
     wageEdit.draft.rows = order.map(i => rows[i]);
     renderWages();
     haptic(10);
@@ -2861,6 +2865,7 @@ async function wageSave() {
     rows.push({ pieces: String(Number(p)), rate: String(Number(rt)) });
   }
   if (!rows.length) { showToast(t('wBadRow'), 'err'); haptic([40, 60, 40]); return; }
+  if (!d._keep) rows.sort((a, b) => Number(a.pieces) - Number(b.pieces));     // small → big, like before
   const seen = new Set();
   for (const r of rows) { if (seen.has(r.pieces)) { showToast(t('wDup'), 'err'); haptic([40, 60, 40]); return; } seen.add(r.pieces); }
   const chart = { id: d.id, title, theme: d.theme, rows };
