@@ -14,9 +14,10 @@
 <link rel="icon" type="image/png" href="logo-v4.png" />
 <script>
 // Start the sheet request as early as possible (before the rest of the page is parsed)
+window.__DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxVW_dj5K0oL0g2LAj055Nw2be6bfSNAdCFsZgMEQDDxhnfDPSYOpoaSl_tf-YU4MBMYA/exec';
 (function () {
   try {
-    var u = localStorage.getItem('appsScriptUrl');
+    var u = localStorage.getItem('appsScriptUrl') || window.__DEFAULT_URL;
     if (u && navigator.onLine !== false) {
       var p = fetch(u, { cache: 'no-store' }).then(function (r) { return r.json(); });
       p.catch(function () {});
@@ -638,6 +639,34 @@ button, a, .nav-tab { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) { .is-syncing .cu, .tabbar .nav-tab.active .tab-ico, .ripple { animation: none; } }
 
 </style>
+<style>
+/* six tabs on phones */
+@media (max-width: 767px) {
+  .tabbar-nav { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+  .tabbar .nav-tab { font-size: 10.5px !important; }
+  .tabbar .nav-tab .tab-ico { padding: 4px 12px !important; }
+}
+@keyframes ind { from { padding: 4px 6px; } to { padding: 4px 12px; } }
+
+/* wage charts */
+.wc { border-radius: 20px; overflow: hidden; border: 1px solid var(--outline); background: #fff; box-shadow: 0 1px 2px rgba(60,45,10,.06); }
+.wc-title { padding: 14px 16px; text-align: center; color: #fff; font-weight: 800; font-size: 1.45rem; line-height: 1.3; }
+.wc-cols, .wc-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; text-align: center; }
+.wc-cols { color: #fff; font-weight: 800; font-size: 1.05rem; padding: 10px 6px; }
+.wc-row { padding: 11px 6px; font-weight: 800; font-size: 1.12rem; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
+.wc-foot { display: flex; gap: 10px; padding: 12px 14px; background: #fbf8ef; border-top: 1px solid var(--outline); }
+.wc-btn { border: 1.5px solid #cbbf9d; background: #fff; color: #3f2f0f; font-weight: 700; font-size: 13px; padding: 9px 18px; border-radius: 9999px; }
+.wc-btn.danger { color: #a3262b; border-color: #e7b9b9; }
+.wc-btn:active { transform: scale(.97); }
+.wc-edit { padding: 16px; display: grid; gap: 12px; }
+.wc-edit label { display: block; font-size: 11px; font-weight: 800; color: #6b6452; letter-spacing: .04em; margin-bottom: 4px; }
+.wc-erow { display: grid; grid-template-columns: 1fr 1fr 42px; gap: 8px; align-items: center; }
+.wc-x { width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid #e7b9b9; background: #fff; color: #a3262b; font-size: 20px; font-weight: 700; line-height: 1; }
+.wc-sw { display: flex; gap: 10px; flex-wrap: wrap; }
+.wc-sw button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1.5px #cbbf9d; }
+.wc-sw button.on { box-shadow: 0 0 0 3px #1f1c14; }
+.wc-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+</style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 <div id="splash" aria-hidden="true">
@@ -672,6 +701,7 @@ button, a, .nav-tab { touch-action: manipulation; }
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="production"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="singeing"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="lifetime"></button>
+    <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="wages"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="settings"></button>
   </nav>
 </div>
@@ -682,6 +712,7 @@ button, a, .nav-tab { touch-action: manipulation; }
   <div class="panel hidden" id="panel-production"></div>
   <div class="panel hidden" id="panel-singeing"></div>
   <div class="panel hidden" id="panel-lifetime"></div>
+  <div class="panel hidden" id="panel-wages"></div>
   <div class="panel hidden" id="panel-settings"></div>
 </main>
 
@@ -690,7 +721,7 @@ const I18N = {
   bn: {
     title: 'ইসলাম উইভিং ফ্যাক্টরি',
     subtitle: 'রায়গঞ্জ, সিরাজগঞ্জ — প্রোডাকশন ও ফাইনান্স ড্যাশবোর্ড',
-    tabDashboard: 'সারাংশ', tabProduction: 'প্রোডাকশন', tabSingeing: 'সিঙ্গিং', tabLifetime: 'লাইফটাইম', tabSettings: 'সেটিংস',
+    tabDashboard: 'সারাংশ', tabProduction: 'প্রোডাকশন', tabSingeing: 'সিঙ্গিং', tabLifetime: 'লাইফটাইম', tabSettings: 'সেটিংস', tabWages: 'মজুরি',
     syncNoUrl: 'শীট লিংক সেট করুন', syncSyncing: 'সিঙ্ক হচ্ছে...', syncOk: 'Online', syncError: 'সিঙ্ক ব্যর্থ',
     emptyNotice: 'শীটের সাথে এখনো সিঙ্ক হয়নি। "সেটিংস" ট্যাবে গিয়ে Google Apps Script লিংকটি দিন।',
     prodCardTitle: 'প্রোডাকশন প্রফিট —', tag24_4_2: () => machNum() + ' / ৪ / ২ মেশিন',
@@ -725,6 +756,14 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'সেভ করা আছে:',
     editLabel: 'এডিট করুন',
+    wTitle: 'মজুরির রেট তালিকা', wDesc: 'উৎপাদনের পিস অনুযায়ী শ্রমিকের মজুরির রেট। পিস আর রেট নিজে বদলাতে পারবেন।',
+    wAdd: 'নতুন তালিকা', wEdit: 'এডিট করুন', wColPcs: 'পিস', wColRate: 'রেট (টাকা)',
+    wRowFirst: n => `${n} পিস পর্যন্ত`, wRow: n => `${n} পিস`,
+    wName: 'তালিকার নাম', wColor: 'রং', wAddRow: '+ সারি যোগ করুন', wSave: 'সেভ করুন', wCancel: 'বাতিল', wDelete: 'তালিকা মুছুন',
+    wDeleteAsk: n => `"${n}" তালিকাটা মুছে ফেলবেন?`, wNoName: 'তালিকার নাম লিখুন', wBadRow: 'প্রতিটা সারিতে পিস আর রেট সংখ্যায় লিখুন',
+    wDup: 'একই পিস দুইবার আছে', wEmpty: 'কোনো তালিকা নেই। উপরে "নতুন তালিকা" চাপুন।', wDelRow: 'সারি মুছুন',
+    clearPiecesAsk: n => `সপ্তাহ ${n}-এর মোট পিস মুছে ফেলবেন? ওই সপ্তাহের থান আর সব প্রফিট ফাঁকা হয়ে যাবে।`,
+    badPieces: 'মোট পিস ঠিক সংখ্যায় লিখুন',
     reportTitle: 'মাসিক রিপোর্ট (PDF)',
     reportDesc: 'মাস শেষে, শিটের তারিখ বদলানোর আগে ডাউনলোড করে রাখুন।',
     reportLangLabel: 'রিপোর্টের ভাষা',
@@ -786,7 +825,7 @@ const I18N = {
   en: {
     title: 'Islam Weaving Factory',
     subtitle: 'Raiganj, Sirajganj — Production & Finance Dashboard',
-    tabDashboard: 'Summary', tabProduction: 'Production', tabSingeing: 'Singeing', tabLifetime: 'Lifetime', tabSettings: 'Settings',
+    tabDashboard: 'Summary', tabProduction: 'Production', tabSingeing: 'Singeing', tabLifetime: 'Lifetime', tabSettings: 'Settings', tabWages: 'Wages',
     syncNoUrl: 'Set sheet link', syncSyncing: 'Syncing...', syncOk: 'Online', syncError: 'Sync failed',
     emptyNotice: 'Not synced with the sheet yet. Go to "Settings" and enter the Apps Script link.',
     prodCardTitle: 'Production Profit —', tag24_4_2: () => machNum() + ' / 4 / 2 Machines',
@@ -821,6 +860,14 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'Saved:',
     editLabel: 'Edit',
+    wTitle: 'Wage rate charts', wDesc: 'Worker wage rate by pieces produced. You can edit the pieces and the rates.',
+    wAdd: 'New chart', wEdit: 'Edit', wColPcs: 'Pieces', wColRate: 'Rate (Taka)',
+    wRowFirst: n => `Up to ${n} pcs`, wRow: n => `${n} pcs`,
+    wName: 'Chart name', wColor: 'Colour', wAddRow: '+ Add row', wSave: 'Save', wCancel: 'Cancel', wDelete: 'Delete chart',
+    wDeleteAsk: n => `Delete the chart "${n}"?`, wNoName: 'Enter a chart name', wBadRow: 'Enter pieces and rate as numbers in every row',
+    wDup: 'The same pieces value appears twice', wEmpty: 'No charts yet. Tap "New chart" above.', wDelRow: 'Remove row',
+    clearPiecesAsk: n => `Clear the total pieces of week ${n}? Thaan and all profits of that week will become blank.`,
+    badPieces: 'Enter total pieces as a valid number',
     reportTitle: 'Monthly report (PDF)',
     reportDesc: 'Download it at month end, before you change the dates in the sheet.',
     reportLangLabel: 'Report language',
@@ -895,7 +942,7 @@ function t(key, ...args) {
   return typeof entry === 'function' ? entry(...args) : entry;
 }
 
-let scriptUrl = localStorage.getItem('appsScriptUrl') || '';
+let scriptUrl = localStorage.getItem('appsScriptUrl') || window.__DEFAULT_URL || '';
 let data = null;
 let syncStatus = 'no-url';
 
@@ -910,6 +957,7 @@ const TAB_ICONS = {
   production: IC('<path d="M3.5 20V10.5l5.5 3.2v-3.2l5.5 3.2V5h6v15z"/><path d="M7.5 17h1.5M11.5 17h1.5M15.5 17h1.5"/>'),
   singeing: IC('<path d="M12 3c.6 3.2 5 5 5 9.5a5 5 0 0 1-10 0c0-2 1-3.3 2.2-4.3.2 1.6.9 2.5 1.9 2.8C11 8.4 11.2 5.4 12 3z"/>'),
   lifetime: IC('<path d="M4 4v16h16"/><path d="M8 15l3.5-4 3 2.5L19.5 7.5"/>'),
+  wages: IC('<rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>'),
   settings: IC('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'),
 };
 
@@ -930,6 +978,7 @@ function applyStaticText() {
   setTabLabel('production', 'tabProduction');
   setTabLabel('singeing', 'tabSingeing');
   setTabLabel('lifetime', 'tabLifetime');
+  setTabLabel('wages', 'tabWages');
   setTabLabel('settings', 'tabSettings');
 }
 if (phoneMQ.addEventListener) phoneMQ.addEventListener('change', applyStaticText);
@@ -1002,9 +1051,87 @@ function saveCache() {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ url: scriptUrl, t: lastSync, data })); } catch (e) {}
 }
 
+
+// ================= Saved on the sheet (survives clearing app data / uninstall) =================
+const SYNC_PREFS = ['appLang', 'reportLang', 'pdfDone', 'wk4Key'];
+let prefQueue = {};
+let prefTimer = null;
+const pushedReports = new Set();
+
+function postQuiet(action) {
+  if (!scriptUrl || !navigator.onLine) return Promise.resolve(null);
+  return fetchWithTimeout(scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(action),
+  }, 20000).then(r => r.json()).then(j => { if (j && j.ok !== false) adoptExtras(j); return j; }).catch(() => null);
+}
+
+function setPref(k, v) {
+  try { localStorage.setItem(k, v); } catch (e) {}
+  prefQueue[k] = v;
+  clearTimeout(prefTimer);
+  prefTimer = setTimeout(flushPrefs, 700);
+}
+function flushPrefs() {
+  const keys = Object.keys(prefQueue);
+  if (!keys.length) return;
+  if (!scriptUrl || !navigator.onLine) return;       // stays queued, retried when back online
+  const sent = prefQueue;
+  prefQueue = {};
+  postQuiet({ action: 'savePrefs', prefs: sent }).then(j => {
+    if (!j || j.ok === false) { Object.keys(sent).forEach(k => { if (!(k in prefQueue)) prefQueue[k] = sent[k]; }); }
+  });
+}
+window.addEventListener('online', () => { flushPrefs(); });
+
+function applyPrefs(p) {
+  if (!p || typeof p !== 'object') return;
+  const missing = {};
+  SYNC_PREFS.forEach(k => {
+    if (k in prefQueue) return;                      // a newer local change is waiting to be sent
+    if (typeof p[k] === 'string') {
+      try { if (localStorage.getItem(k) !== p[k]) localStorage.setItem(k, p[k]); } catch (e) {}
+    } else {
+      let lv = null; try { lv = localStorage.getItem(k); } catch (e) {}
+      if (lv !== null) missing[k] = lv;              // old phone-only value → keep it on the sheet too
+    }
+  });
+  if (p.appLang === 'bn' || p.appLang === 'en') lang = p.appLang;
+  if (p.reportLang === 'bn' || p.reportLang === 'en') reportLang = p.reportLang;
+  if (Object.keys(missing).length) { Object.assign(prefQueue, missing); clearTimeout(prefTimer); prefTimer = setTimeout(flushPrefs, 1500); }
+}
+
+function mergeReports(srv) {
+  const byKey = {};
+  srv.forEach(e => { if (e && e.key && e.src) byKey[e.key] = e; });
+  const toPush = [];
+  loadReportHistory().forEach(e => {
+    if (!e || !e.key || !e.src) return;
+    const o = byKey[e.key];
+    if (!o || ((e.savedAt || 0) > (o.savedAt || 0) && JSON.stringify(e.src) !== JSON.stringify(o.src))) { byKey[e.key] = e; toPush.push(e); }
+  });
+  const merged = Object.keys(byKey).map(k => byKey[k]).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)).slice(0, 3);
+  storeReportHistory(merged);
+  toPush.forEach(e => {
+    if (!merged.some(m => m.key === e.key)) return;
+    const id = e.key + '|' + e.savedAt;
+    if (pushedReports.has(id)) return;
+    pushedReports.add(id);
+    postQuiet({ action: 'saveReport', key: e.key, savedAt: e.savedAt, src: e.src });
+  });
+}
+
+function adoptExtras(json) {
+  if (!json) return;
+  try { if (json.prefs) applyPrefs(json.prefs); } catch (e) {}
+  try { if (Array.isArray(json.reports)) mergeReports(json.reports); } catch (e) {}
+}
+
 function applyData(json) {
   data = json;
   lastSync = Date.now();
+  adoptExtras(json);
   saveCache();
   try { saveReportSnapshot(); } catch (e) {}
   renderAll();
@@ -1760,7 +1887,7 @@ let reportLang = (function () { try { return localStorage.getItem('reportLang') 
 
 function setReportLang(l) {
   reportLang = l === 'bn' ? 'bn' : 'en';
-  try { localStorage.setItem('reportLang', reportLang); } catch (e) {}
+  setPref('reportLang', reportLang);
   renderAll();
 }
 
@@ -1851,7 +1978,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -1928,7 +2055,7 @@ function cycleReminderInfo() {
   return { end, key };
 }
 function markPdfDone() {
-  try { const c = cycleReminderInfo(); if (c) localStorage.setItem('pdfDone', c.key); } catch (e) {}
+  try { const c = cycleReminderInfo(); if (c) setPref('pdfDone', c.key); } catch (e) {}
   renderTicker();
 }
 // the cycle counts as complete once week 4's data has been entered in THIS cycle
@@ -1939,7 +2066,7 @@ function cycleComplete() {
   try {
     // old numbers left in the sheet from the previous cycle must not count
     let k4 = localStorage.getItem('wk4Key');
-    if (k4 === null) { localStorage.setItem('wk4Key', c.key); k4 = c.key; }
+    if (k4 === null) { setPref('wk4Key', c.key); k4 = c.key; }
     if (k4 !== c.key) return null;
   } catch (e) {}
   return c;
@@ -1963,7 +2090,13 @@ function upsertSnapshot(key) {
   const old = all.find(e => e.key === key);
   if (old && JSON.stringify(old.src) === JSON.stringify(src)) return;
   const h = all.filter(e => e.key !== key);
-  h.unshift({ key, savedAt: Date.now(), src });
+  const entry = { key, savedAt: Date.now(), src };
+  h.unshift(entry);
+  storeReportHistory(h);
+  pushedReports.add(entry.key + '|' + entry.savedAt);
+  postQuiet({ action: 'saveReport', key: entry.key, savedAt: entry.savedAt, src: entry.src });
+}
+function storeReportHistory(h) {
   try { localStorage.setItem('reportHistory', JSON.stringify(h.slice(0, 3))); } catch (e) {}
 }
 function saveReportSnapshot() {
@@ -2231,6 +2364,7 @@ function renderAllRaw() {
   renderProduction();
   renderSingeing();
   renderLifetime();
+  renderWages();
   renderSettings();
 }
 
@@ -2396,6 +2530,8 @@ async function saveAssumptions() {
 function renderProduction() {
   const el = document.getElementById('panel-production');
   if (!data) { el.innerHTML = emptyNotice(); return; }
+  const hasPcs = w => Number(w && w.totalPieces) > 0;
+  const dash = '<span class="text-slate-400 font-bold">—</span>';
   el.innerHTML = `<div class="space-y-4">` + data.weeks.map((w, i) => `
     <div class="glass-card p-6 border-l-4 border-l-brand-900 hover:border-l-brand-600 transition">
       <div class="flex justify-between items-center mb-4">
@@ -2413,11 +2549,11 @@ function renderProduction() {
         </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs mb-5 bg-white/50 p-4 rounded-xl border border-slate-200/60">
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statThaan')}</span> <b class="text-brand-900 text-sm font-extrabold">${w.weeklyThaan}</b></div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statTotalProfit')}</span> <b class="text-brand-900 text-sm font-extrabold">${fmtBDT(w.totalProfit)}</b></div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statMyProfit')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.myProfit)}</b>${i > 0 ? deltaChip(w.myProfit, data.weeks[i - 1].myProfit) : ''}</div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('stat2Machine')}</span> <b class="text-brand-900 text-sm font-extrabold">${fmtBDT(w.twoMachineProfit)}</b></div>
-        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statCombined')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${fmtBDT(w.combinedProfit)}</b>${i > 0 ? deltaChip(w.combinedProfit, data.weeks[i - 1].combinedProfit) : ''}</div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statThaan')}</span> <b class="text-brand-900 text-sm font-extrabold">${hasPcs(w) ? w.weeklyThaan : dash}</b></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statTotalProfit')}</span> <b class="text-brand-900 text-sm font-extrabold">${hasPcs(w) ? fmtBDT(w.totalProfit) : dash}</b></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statMyProfit')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${hasPcs(w) ? fmtBDT(w.myProfit) : dash}</b>${i > 0 && hasPcs(w) && hasPcs(data.weeks[i - 1]) ? deltaChip(w.myProfit, data.weeks[i - 1].myProfit) : ''}</div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('stat2Machine')}</span> <b class="text-brand-900 text-sm font-extrabold">${hasPcs(w) ? fmtBDT(w.twoMachineProfit) : dash}</b></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-bold">${t('statCombined')}</span> <b class="text-finGreen-600 text-sm font-extrabold">${hasPcs(w) ? fmtBDT(w.combinedProfit) : dash}</b>${i > 0 && hasPcs(w) && hasPcs(data.weeks[i - 1]) ? deltaChip(w.combinedProfit, data.weeks[i - 1].combinedProfit) : ''}</div>
       </div>
       <button class="w-full glass-btn-primary font-bold text-xs py-3 rounded-xl" data-save="week-${i}" onclick="saveWeek(${i})">${t('btnSaveSheet')}</button>
     </div>
@@ -2428,24 +2564,172 @@ async function saveWeek(i) {
   const row = data.weeks[i];
   const dateVal = document.getElementById('prod-date-' + i).value.trim();
   const piecesVal = document.getElementById('prod-pieces-' + i).value.trim();
-  // A box left empty keeps the value already saved in the sheet (never overwritten with blank/0)
+  // date: a box left empty keeps the date already in the sheet
   const date = dateVal !== '' ? dateVal : (row.date || '');
-  const totalPieces = piecesVal !== '' ? (Number(piecesVal) || 0) : (Number(row.totalPieces) || 0);
+  // pieces: an empty box (or 0) CLEARS the week, like deleting the cell in Excel
+  const pv = Number(piecesVal);
+  if (piecesVal !== '' && (isNaN(pv) || pv < 0)) { showToast(t('badPieces'), 'err'); haptic([40, 60, 40]); return; }
+  const clearing = piecesVal === '' || pv === 0;
+  const totalPieces = clearing ? '' : pv;
   if (dateVal !== '' && dateVal !== String(row.date || '').trim() && !(await passCheck(dateOrderCheck(i, date)))) return;
-  if (piecesVal !== '' && Number(piecesVal) !== Number(row.totalPieces)) {
+  if (clearing) {
+    if (Number(row.totalPieces) > 0 && !(await askConfirm(t('clearPiecesAsk', localDigits(i + 1))))) return;
+  } else if (pv !== Number(row.totalPieces)) {
     const others = data.weeks.filter((w, j) => j !== i).map(w => w.totalPieces);
-    if (!(await passCheck(oddCheck(t('lblPieces'), Number(piecesVal), others, row.totalPieces)))) return;
+    if (!(await passCheck(oddCheck(t('lblPieces'), pv, others, row.totalPieces)))) return;
   }
   const saved = await pushAction({ action: 'updateWeek', weekIndex: i + 1, date, totalPieces }, {
     key: 'week-' + i,
     lockIds: ['prod-date-' + i, 'prod-pieces-' + i],
-    apply: () => { row.date = date; row.totalPieces = totalPieces; },
+    apply: () => {
+      row.date = date; row.totalPieces = totalPieces;
+      if (clearing) { row.weeklyThaan = 0; row.totalProfit = 0; row.myProfit = 0; row.twoMachineProfit = 0; row.combinedProfit = 0; }
+    },
   });
-  if (saved && i === 3 && piecesVal !== '' && totalPieces > 0) {
-    try { const c = cycleReminderInfo(); if (c) localStorage.setItem('wk4Key', c.key); } catch (e) {}
+  if (saved && i === 3 && !clearing) {
+    try { const c = cycleReminderInfo(); if (c) setPref('wk4Key', c.key); } catch (e) {}
     saveReportSnapshot();
     renderAll();
   }
+}
+
+// ================= Wage rate charts (saved on the sheet) =================
+const WAGE_THEMES = {
+  blue: ['#0b47a8', '#06306f'], green: ['#0a5c3c', '#06402a'], maroon: ['#a3262b', '#741a1e'],
+  purple: ['#5b33a8', '#3f2278'], orange: ['#c2570c', '#8f3f08'], teal: ['#0e7490', '#0a5266'],
+};
+const WAGE_ROW_COLORS = ['#fde979', '#fbb4d3', '#b4f0b0', '#a8d4fb', '#cdb4fb', '#fdb870', '#92efe9'];
+const DEFAULT_WAGE_CHARTS = [
+  { id: 'w5', title: '৫ হাত লুঙ্গি', theme: 'blue', rows: [['159', '20'], ['160', '21'], ['180', '22'], ['190', '23'], ['200', '24'], ['210', '25'], ['220', '26']].map(r => ({ pieces: r[0], rate: r[1] })) },
+  { id: 'w55', title: 'সাড়ে ৫ হাত লুঙ্গি', theme: 'green', rows: [['139', '24'], ['140', '25'], ['155', '26'], ['170', '27'], ['185', '28'], ['200', '29'], ['215', '30']].map(r => ({ pieces: r[0], rate: r[1] })) },
+];
+let wageEdit = null;      // { idx, isNew, draft } while a chart is being edited
+
+function escAttr(v) { return escHtml(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function wageCharts() { return (data && data.wages && Array.isArray(data.wages.charts)) ? data.wages.charts : DEFAULT_WAGE_CHARTS; }
+function wageNorm(v) { return String(v === undefined || v === null ? '' : v).replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/[,\s]/g, ''); }
+
+function wageChartHTML(c, idx) {
+  const th = WAGE_THEMES[c.theme] || WAGE_THEMES.blue;
+  const rows = (c.rows || []).map((r, i) => `<div class="wc-row" style="background:${WAGE_ROW_COLORS[i % WAGE_ROW_COLORS.length]}">
+      <div>${escHtml(i === 0 ? t('wRowFirst', localDigits(r.pieces)) : t('wRow', localDigits(r.pieces)))}</div><div>${escHtml(localDigits(r.rate))}</div></div>`).join('');
+  return `<div class="wc"><div class="wc-title" style="background:${th[0]}">${escHtml(c.title)}</div>
+    <div class="wc-cols" style="background:${th[1]}"><div>${t('wColPcs')}</div><div>${t('wColRate')}</div></div>${rows}
+    <div class="wc-foot"><button type="button" class="wc-btn" onclick="wageStartEdit(${idx})">${t('wEdit')}</button></div></div>`;
+}
+
+function wageEditHTML() {
+  const d = wageEdit.draft;
+  const sw = Object.keys(WAGE_THEMES).map(k => `<button type="button" class="${d.theme === k ? 'on' : ''}" style="background:${WAGE_THEMES[k][0]}" onclick="wageSetTheme('${k}')" aria-label="${k}"></button>`).join('');
+  const rows = d.rows.map((r, i) => `<div class="wc-erow">
+      <input class="input-field text-sm font-semibold w-full" id="wage-p-${i}" type="text" inputmode="numeric" value="${escAttr(r.pieces)}" oninput="wageCell(${i},'pieces',this.value)" />
+      <input class="input-field text-sm font-semibold w-full" id="wage-r-${i}" type="text" inputmode="decimal" value="${escAttr(r.rate)}" oninput="wageCell(${i},'rate',this.value)" />
+      <button type="button" class="wc-x" onclick="wageDelRow(${i})" aria-label="${t('wDelRow')}">×</button></div>`).join('');
+  return `<div class="wc" id="wage-editor"><div class="wc-edit">
+    <div><label>${t('wName')}</label><input class="input-field text-sm font-semibold w-full" id="wage-title" type="text" value="${escAttr(d.title)}" oninput="wageEdit.draft.title=this.value" /></div>
+    <div><label>${t('wColor')}</label><div class="wc-sw">${sw}</div></div>
+    <div style="display:grid;gap:8px">
+      <div class="wc-erow"><label style="margin:0">${t('wColPcs')}</label><label style="margin:0">${t('wColRate')}</label><span></span></div>
+      ${rows}
+    </div>
+    <div><button type="button" class="wc-btn" onclick="wageAddRow()">${t('wAddRow')}</button></div>
+    <div class="wc-actions">
+      <button type="button" class="glass-btn-primary font-bold text-xs py-3 px-6 rounded-xl" data-save="wages" onclick="wageSave()">${t('wSave')}</button>
+      <button type="button" class="wc-btn" onclick="wageCancel()">${t('wCancel')}</button>
+      ${wageEdit.isNew ? '' : `<button type="button" class="wc-btn danger" onclick="wageDelete()">${t('wDelete')}</button>`}
+    </div></div></div>`;
+}
+
+function renderWages() {
+  const el = document.getElementById('panel-wages');
+  if (!el) return;
+  if (!data) { el.innerHTML = emptyNotice(); return; }
+  const charts = wageCharts();
+  const editingNew = !!(wageEdit && wageEdit.isNew);
+  let html = `<div class="space-y-4"><div class="glass-card p-5"><div class="flex items-start justify-between gap-3">
+      <div><h2 class="font-bold text-brand-900 text-base">${t('wTitle')}</h2><p class="text-xs text-slate-600 font-medium mt-1">${t('wDesc')}</p></div>
+      <button type="button" class="glass-btn-primary font-bold text-xs py-2.5 px-4 rounded-xl flex-none whitespace-nowrap" onclick="wageNew()">${t('wAdd')}</button></div></div>`;
+  charts.forEach((c, i) => { html += (wageEdit && !wageEdit.isNew && wageEdit.idx === i) ? wageEditHTML() : wageChartHTML(c, i); });
+  if (editingNew) html += wageEditHTML();
+  if (!charts.length && !editingNew) html += `<div class="glass-card p-8 text-center text-slate-700 font-semibold text-sm">${t('wEmpty')}</div>`;
+  el.innerHTML = html + '</div>';
+  applyPending();
+}
+
+function wageFocusEditor(focusId) {
+  setTimeout(() => {
+    const ed = document.getElementById('wage-editor');
+    if (ed) ed.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const f = document.getElementById(focusId || 'wage-title');
+    if (f) f.focus({ preventScroll: true });
+  }, 60);
+}
+function wageStartEdit(idx) {
+  const c = wageCharts()[idx];
+  if (!c) return;
+  wageEdit = { idx, isNew: false, draft: JSON.parse(JSON.stringify(c)) };
+  renderWages();
+  wageFocusEditor();
+}
+function wageNew() {
+  if (wageCharts().length >= 12) return;
+  wageEdit = { idx: -1, isNew: true, draft: { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), title: '', theme: 'blue', rows: [{ pieces: '', rate: '' }] } };
+  renderWages();
+  wageFocusEditor();
+}
+function wageCancel() { wageEdit = null; renderWages(); }
+function wageCell(i, k, v) { if (wageEdit && wageEdit.draft.rows[i]) wageEdit.draft.rows[i][k] = v; }
+function wageSetTheme(k) { if (wageEdit) { wageEdit.draft.theme = k; renderWages(); } }
+function wageAddRow() {
+  if (!wageEdit || wageEdit.draft.rows.length >= 30) return;
+  wageEdit.draft.rows.push({ pieces: '', rate: '' });
+  renderWages();
+  const f = document.getElementById('wage-p-' + (wageEdit.draft.rows.length - 1));
+  if (f) f.focus();
+}
+function wageDelRow(i) {
+  if (!wageEdit) return;
+  if (wageEdit.draft.rows.length <= 1) { wageEdit.draft.rows = [{ pieces: '', rate: '' }]; }
+  else wageEdit.draft.rows.splice(i, 1);
+  renderWages();
+}
+
+async function wageSave() {
+  if (!wageEdit || pendingSaves.has('wages')) return;
+  const d = wageEdit.draft;
+  const title = String(d.title || '').trim();
+  if (!title) { showToast(t('wNoName'), 'err'); haptic([40, 60, 40]); return; }
+  const rows = [];
+  for (const r of d.rows) {
+    const p = wageNorm(r.pieces), rt = wageNorm(r.rate);
+    if (p === '' && rt === '') continue;                       // a fully empty row is just dropped
+    if (!/^\d+$/.test(p) || !/^\d+(\.\d+)?$/.test(rt)) { showToast(t('wBadRow'), 'err'); haptic([40, 60, 40]); return; }
+    rows.push({ pieces: String(Number(p)), rate: String(Number(rt)) });
+  }
+  if (!rows.length) { showToast(t('wBadRow'), 'err'); haptic([40, 60, 40]); return; }
+  rows.sort((a, b) => Number(a.pieces) - Number(b.pieces));
+  for (let i = 1; i < rows.length; i++) { if (rows[i].pieces === rows[i - 1].pieces) { showToast(t('wDup'), 'err'); haptic([40, 60, 40]); return; } }
+  const chart = { id: d.id, title, theme: d.theme, rows };
+  const list = wageCharts().slice();
+  if (wageEdit.isNew) list.push(chart); else list[wageEdit.idx] = chart;
+  const keep = wageEdit;
+  const ok = await pushAction({ action: 'saveWages', charts: list }, {
+    key: 'wages',
+    apply: () => { data.wages = { charts: list }; wageEdit = null; },
+  });
+  if (!ok) { wageEdit = keep; renderWages(); }
+}
+
+async function wageDelete() {
+  if (!wageEdit || wageEdit.isNew || pendingSaves.has('wages')) return;
+  if (!(await askConfirm(t('wDeleteAsk', wageEdit.draft.title || '')))) return;
+  const list = wageCharts().filter((c, i) => i !== wageEdit.idx);
+  const keep = wageEdit;
+  const ok = await pushAction({ action: 'saveWages', charts: list }, {
+    key: 'wages',
+    apply: () => { data.wages = { charts: list }; wageEdit = null; },
+  });
+  if (!ok) { wageEdit = keep; renderWages(); }
 }
 
 function renderSingeing() {
@@ -2715,7 +2999,7 @@ function renderSettings() {
 }
 
 function saveSettings() {
-  const val = document.getElementById('settings-url').value.trim();
+  const val = document.getElementById('settings-url').value.trim() || window.__DEFAULT_URL || '';
   scriptUrl = val;
   localStorage.setItem('appsScriptUrl', val);
   fetchFromSheet();
@@ -2723,7 +3007,7 @@ function saveSettings() {
 
 function setLanguage(l) {
   lang = l;
-  localStorage.setItem('appLang', l);
+  setPref('appLang', l);
   renderAll();
 }
 
