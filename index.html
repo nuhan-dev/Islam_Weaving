@@ -657,7 +657,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .wc-title { padding: 10px 6px; text-align: center; color: #fff; font-weight: 800; font-size: 1.02rem; line-height: 1.3; }
 .wc-cols, .wc-row { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; text-align: center; }
 .wc-cols { color: #fff; font-weight: 800; font-size: .8rem; padding: 7px 3px; }
-.wc-row { padding: 8px 3px; font-weight: 800; font-size: .86rem; line-height: 1.25; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
+.wc-row { padding: 9px 3px; font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
 .wc-foot { display: flex; justify-content: center; gap: 10px; padding: 9px 8px; background: #fbf8ef; border-top: 1px solid var(--outline); }
 .wc-btn { border: 1.5px solid #cbbf9d; background: #fff; color: #3f2f0f; font-weight: 700; font-size: 12.5px; padding: 7px 16px; border-radius: 9999px; }
 .wc-btn.danger { color: #a3262b; border-color: #e7b9b9; }
@@ -2011,7 +2011,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
