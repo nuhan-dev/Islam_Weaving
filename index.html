@@ -666,6 +666,16 @@ button, a, .nav-tab { touch-action: manipulation; }
 .wc-sw button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1.5px #cbbf9d; }
 .wc-sw button.on { box-shadow: 0 0 0 3px #1f1c14; }
 .wc-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.dlg.wide { max-width: 380px; }
+.dlg.wide h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: #1f1c14; }
+.dlg.wide p.dlg-sub { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: #6b6452; font-weight: 500; }
+.dlg.wide label { display: block; font-size: 11px; font-weight: 800; color: #6b6452; letter-spacing: .04em; margin: 10px 0 4px; }
+.dlg.wide .input-field { width: 100%; }
+.dlg.wide p.dlg-err { color: #a3262b; font-size: 13.5px; font-weight: 700; min-height: 18px; margin: 10px 0 8px; }
+.cyc-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff7dc; border: 1px solid #f1d98f; border-radius: 20px; padding: 14px 16px; }
+.cyc-card b { display: block; font-size: 14.5px; color: #4a3500; }
+.cyc-card span { display: block; font-size: 12px; color: #6b5a22; line-height: 1.5; margin-top: 2px; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
@@ -756,6 +766,12 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'সেভ করা আছে:',
     editLabel: 'এডিট করুন',
+    cycTitle: 'নতুন সাইকেল শুরু করুন', cycDesc: '৪ সপ্তাহ শেষ হলে চাপুন। ৪টা তারিখ একবারে বসবে, আর আগের সব মোট পিস ও সিঙ্গিং থান মুছে যাবে।',
+    cycBtn: 'নতুন সাইকেল', cycWeek: n => `সপ্তাহ ${n}-এর তারিখ`, cycHint: 'তারিখ এভাবে লিখুন: 3.12.26',
+    cycWarn: 'আগের ৪ সপ্তাহের মোট পিস আর সিঙ্গিং থান মুছে যাবে। আগে রিপোর্ট নেওয়া থাকলে চালিয়ে যান।', cycStart: 'শুরু করুন',
+    cycErrEmpty: 'চারটা তারিখই লিখুন', cycErrBad: 'তারিখ ঠিক ফরম্যাটে লিখুন (যেমন 3.12.26)', cycErrOrder: 'তারিখগুলো ক্রমে বাড়তে হবে (১ম < ২য় < ৩য় < ৪র্থ)',
+    cycPdfAsk: 'এই সাইকেলের PDF রিপোর্ট এখনো নেওয়া হয়নি। তবুও নতুন সাইকেল শুরু করবেন?',
+    clearSingAsk: n => `সপ্তাহ ${n}-এর সিঙ্গিং থান মুছে ফেলবেন? ওই সপ্তাহের টাকা ফাঁকা হয়ে যাবে।`,
     wTitle: 'মজুরির রেট তালিকা', wDesc: 'উৎপাদনের পিস অনুযায়ী শ্রমিকের মজুরির রেট। পিস আর রেট নিজে বদলাতে পারবেন।',
     wAdd: 'নতুন তালিকা', wEdit: 'এডিট করুন', wColPcs: 'পিস', wColRate: 'রেট (টাকা)',
     wRowFirst: n => `${n} পিস পর্যন্ত`, wRow: n => `${n} পিস`,
@@ -860,6 +876,12 @@ const I18N = {
     langBangla: 'বাংলা', langEnglish: 'English',
     savedLabel: 'Saved:',
     editLabel: 'Edit',
+    cycTitle: 'Start a new cycle', cycDesc: 'Tap when the 4 weeks are over. All 4 dates go in at once, and the old total pieces and singed thaan are cleared.',
+    cycBtn: 'New cycle', cycWeek: n => `Date of week ${n}`, cycHint: 'Write dates like: 3.12.26',
+    cycWarn: 'Total pieces and singed thaan of the last 4 weeks will be cleared. Continue if you already took the report.', cycStart: 'Start',
+    cycErrEmpty: 'Enter all four dates', cycErrBad: 'Enter dates in the right format (e.g. 3.12.26)', cycErrOrder: 'Dates must increase week by week',
+    cycPdfAsk: 'This cycle\'s PDF report has not been downloaded yet. Start a new cycle anyway?',
+    clearSingAsk: n => `Clear the singed thaan of week ${n}? That week\'s pay will become blank.`,
     wTitle: 'Wage rate charts', wDesc: 'Worker wage rate by pieces produced. You can edit the pieces and the rates.',
     wAdd: 'New chart', wEdit: 'Edit', wColPcs: 'Pieces', wColRate: 'Rate (Taka)',
     wRowFirst: n => `Up to ${n} pcs`, wRow: n => `${n} pcs`,
@@ -1978,7 +2000,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.2';
+const APP_VERSION = '2.3';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2532,7 +2554,7 @@ function renderProduction() {
   if (!data) { el.innerHTML = emptyNotice(); return; }
   const hasPcs = w => Number(w && w.totalPieces) > 0;
   const dash = '<span class="text-slate-400 font-bold">—</span>';
-  el.innerHTML = `<div class="space-y-4">` + data.weeks.map((w, i) => `
+  el.innerHTML = `<div class="space-y-4">` + cycleCardHTML() + data.weeks.map((w, i) => `
     <div class="glass-card p-6 border-l-4 border-l-brand-900 hover:border-l-brand-600 transition">
       <div class="flex justify-between items-center mb-4">
         <div class="font-bold text-brand-900 text-base">${t('weekLabel', w.week)}</div>
@@ -2591,6 +2613,62 @@ async function saveWeek(i) {
     saveReportSnapshot();
     renderAll();
   }
+}
+
+// ================= New 4-week cycle =================
+function cycleCardHTML() {
+  return `<div class="cyc-card"><div><b>${t('cycTitle')}</b><span>${t('cycDesc')}</span></div>
+    <button type="button" class="glass-btn-primary font-bold text-xs py-2.5 px-4 rounded-xl flex-none whitespace-nowrap" data-save="cycle" onclick="startNewCycle()">${t('cycBtn')}</button></div>`;
+}
+function dateNorm(v) { return String(v || '').replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim(); }
+
+// asks for the 4 dates; resolves with the 4 date strings or null
+function askNewCycle() {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'dlg-ov';
+    const box = document.createElement('div');
+    box.className = 'dlg wide';
+    box.setAttribute('role', 'dialog');
+    let fields = '';
+    for (let i = 0; i < 4; i++) fields += `<label for="cyc-d-${i}">${t('cycWeek', localDigits(i + 1))}</label><input class="input-field text-sm font-semibold" id="cyc-d-${i}" type="text" inputmode="decimal" autocomplete="off" />`;
+    box.innerHTML = `<h3>${t('cycTitle')}</h3><p class="dlg-sub">${t('cycWarn')}</p>${fields}<p class="dlg-sub" style="margin-top:8px">${t('cycHint')}</p>
+      <p class="dlg-err" id="cyc-err" role="alert"></p>
+      <div class="dlg-btns"><button type="button" class="dlg-no">${t('wCancel')}</button><button type="button" class="dlg-yes">${t('cycStart')}</button></div>`;
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    const done = v => { ov.remove(); resolve(v); };
+    box.querySelector('.dlg-no').onclick = () => done(null);
+    box.querySelector('.dlg-yes').onclick = () => {
+      const vals = [0, 1, 2, 3].map(i => dateNorm(document.getElementById('cyc-d-' + i).value));
+      const err = document.getElementById('cyc-err');
+      if (vals.some(v => v === '')) { err.textContent = t('cycErrEmpty'); haptic([40, 60, 40]); return; }
+      const ps = vals.map(parseSheetDate);
+      if (ps.some(p => !p)) { err.textContent = t('cycErrBad'); haptic([40, 60, 40]); return; }
+      const ts = ps.map(p => new Date(p.y, p.m, p.d).getTime());
+      if (!(ts[0] < ts[1] && ts[1] < ts[2] && ts[2] < ts[3])) { err.textContent = t('cycErrOrder'); haptic([40, 60, 40]); return; }
+      done(vals);
+    };
+    haptic(20);
+    setTimeout(() => { const f = document.getElementById('cyc-d-0'); if (f) f.focus(); }, 80);
+  });
+}
+
+async function startNewCycle() {
+  if (!data || pendingSaves.has('cycle')) return;
+  try { saveReportSnapshot(); } catch (e) {}                       // keep this cycle's report before wiping it
+  if (pdfReminderActive() && !(await askConfirm(t('cycPdfAsk')))) return;
+  const dates = await askNewCycle();
+  if (!dates) return;
+  await pushAction({ action: 'newCycle', dates }, {
+    key: 'cycle',
+    apply: () => {
+      data.weeks.slice(0, 4).forEach((w, i) => {
+        w.date = dates[i]; w.totalPieces = ''; w.weeklyThaan = 0; w.totalProfit = 0; w.myProfit = 0; w.twoMachineProfit = 0; w.combinedProfit = 0;
+      });
+      data.singeing.slice(0, 4).forEach((x, i) => { x.date = dates[i]; x.singedThaan = ''; x.pay = 0; });
+    },
+  });
 }
 
 // ================= Wage rate charts (saved on the sheet) =================
@@ -2735,11 +2813,11 @@ async function wageDelete() {
 function renderSingeing() {
   const el = document.getElementById('panel-singeing');
   if (!data) { el.innerHTML = emptyNotice(); return; }
-  el.innerHTML = `<div class="space-y-3">` + data.singeing.map((s, i) => `
+  el.innerHTML = `<div class="space-y-3">` + cycleCardHTML() + data.singeing.map((s, i) => `
     <div class="glass-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
         <div class="font-bold text-brand-900 text-base">${t('weekLabel', s.week)}</div>
-        <div class="text-xs text-slate-600 font-medium mt-0.5">${s.date} · ${t('payLabel')} <span class="font-extrabold text-brand-900">${fmtBDT(s.pay)}</span></div>
+        <div class="text-xs text-slate-600 font-medium mt-0.5">${s.date} · ${t('payLabel')} <span class="font-extrabold text-brand-900">${Number(s.singedThaan) > 0 ? fmtBDT(s.pay) : '—'}</span></div>
       </div>
       <div class="flex gap-3 w-full sm:w-auto">
         ${lockBox('sing-' + i, s.singedThaan, 'input-field text-sm font-bold w-full', t('singedPlaceholder'), 'sing')}
@@ -2752,16 +2830,21 @@ function renderSingeing() {
 async function saveSingeing(i) {
   const row = data.singeing[i];
   const val = document.getElementById('sing-' + i).value.trim();
-  // A box left empty keeps the value already saved in the sheet
-  const singedThaan = val !== '' ? (Number(val) || 0) : (Number(row.singedThaan) || 0);
-  if (val !== '' && Number(val) !== Number(row.singedThaan)) {
+  // an empty box (or 0) CLEARS the week, like deleting the cell in Excel
+  const nv = Number(val);
+  if (val !== '' && (isNaN(nv) || nv < 0)) { showToast(t('badNumber'), 'err'); haptic([40, 60, 40]); return; }
+  const clearing = val === '' || nv === 0;
+  const singedThaan = clearing ? '' : nv;
+  if (clearing) {
+    if (Number(row.singedThaan) > 0 && !(await askConfirm(t('clearSingAsk', localDigits(i + 1))))) return;
+  } else if (nv !== Number(row.singedThaan)) {
     const others = data.singeing.filter((x, j) => j !== i).map(x => x.singedThaan);
-    if (!(await passCheck(oddCheck(t('lblSinged'), Number(val), others, row.singedThaan)))) return;
+    if (!(await passCheck(oddCheck(t('lblSinged'), nv, others, row.singedThaan)))) return;
   }
   await pushAction({ action: 'updateSingeing', weekIndex: i + 1, singedThaan }, {
     key: 'sing-' + i,
     lockIds: ['sing-' + i],
-    apply: () => { row.singedThaan = singedThaan; },
+    apply: () => { row.singedThaan = singedThaan; if (clearing) row.pay = 0; },
   });
 }
 
