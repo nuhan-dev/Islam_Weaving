@@ -664,7 +664,12 @@ button, a, .nav-tab { touch-action: manipulation; }
 .wc-btn:active { transform: scale(.97); }
 .wc-edit { padding: 16px; display: grid; gap: 12px; }
 .wc-edit label { display: block; font-size: 11px; font-weight: 800; color: #6b6452; letter-spacing: .04em; margin-bottom: 4px; }
-.wc-erow { display: grid; grid-template-columns: 1fr 1fr 42px; gap: 8px; align-items: center; }
+.wc-erow { display: grid; grid-template-columns: 30px 1fr 1fr 42px; gap: 6px; align-items: center; background: #fff; border-radius: 14px; }
+.wc-erows { display: grid; gap: 8px; }
+.wc-grip { width: 30px; height: 42px; border: 0; background: transparent; color: #9a8f72; display: flex; align-items: center; justify-content: center; touch-action: none; cursor: grab; border-radius: 10px; }
+.wc-drag { box-shadow: 0 8px 22px rgba(60,45,10,.28); outline: 2px solid #1a7a5c; z-index: 5; position: relative; }
+.wc-drag .wc-grip { color: #1a7a5c; }
+.wc-hint { margin: 2px 0 0; font-size: 12px; color: #6b6452; font-weight: 500; line-height: 1.5; }
 .wc-x { width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid #e7b9b9; background: #fff; color: #a3262b; font-size: 20px; font-weight: 700; line-height: 1; }
 .wc-sw { display: flex; gap: 10px; flex-wrap: wrap; }
 .wc-sw button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1.5px #cbbf9d; }
@@ -785,7 +790,7 @@ const I18N = {
     wRowFirst: n => `${n} পিস পর্যন্ত`, wRow: n => `${n} পিস`,
     wName: 'তালিকার নাম', wColor: 'রং', wAddRow: '+ সারি যোগ করুন', wSave: 'সেভ করুন', wCancel: 'বাতিল', wDelete: 'তালিকা মুছুন',
     wDeleteAsk: n => `"${n}" তালিকাটা মুছে ফেলবেন?`, wNoName: 'তালিকার নাম লিখুন', wBadRow: 'প্রতিটা সারিতে পিস আর রেট সংখ্যায় লিখুন',
-    wDup: 'একই পিস দুইবার আছে', wEmpty: 'কোনো তালিকা নেই। উপরে "নতুন তালিকা" চাপুন।', wDelRow: 'সারি মুছুন',
+    wDrag: 'ধরে টেনে সাজান', wDragHint: 'বাঁয়ের ⋮⋮ চিহ্ন ধরে উপর-নিচে টেনে সারির ক্রম বদলান।', wDup: 'একই পিস দুইবার আছে', wEmpty: 'কোনো তালিকা নেই। উপরে "নতুন তালিকা" চাপুন।', wDelRow: 'সারি মুছুন',
     clearPiecesAsk: n => `সপ্তাহ ${n}-এর মোট পিস মুছে ফেলবেন? ওই সপ্তাহের থান আর সব প্রফিট ফাঁকা হয়ে যাবে।`,
     badPieces: 'মোট পিস ঠিক সংখ্যায় লিখুন',
     reportTitle: 'মাসিক রিপোর্ট (PDF)',
@@ -895,7 +900,7 @@ const I18N = {
     wRowFirst: n => `Up to ${n} pcs`, wRow: n => `${n} pcs`,
     wName: 'Chart name', wColor: 'Colour', wAddRow: '+ Add row', wSave: 'Save', wCancel: 'Cancel', wDelete: 'Delete chart',
     wDeleteAsk: n => `Delete the chart "${n}"?`, wNoName: 'Enter a chart name', wBadRow: 'Enter pieces and rate as numbers in every row',
-    wDup: 'The same pieces value appears twice', wEmpty: 'No charts yet. Tap "New chart" above.', wDelRow: 'Remove row',
+    wDrag: 'Drag to reorder', wDragHint: 'Hold the ⋮⋮ handle on the left and drag a row up or down.', wDup: 'The same pieces value appears twice', wEmpty: 'No charts yet. Tap "New chart" above.', wDelRow: 'Remove row',
     clearPiecesAsk: n => `Clear the total pieces of week ${n}? Thaan and all profits of that week will become blank.`,
     badPieces: 'Enter total pieces as a valid number',
     reportTitle: 'Monthly report (PDF)',
@@ -2006,7 +2011,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2700,7 +2705,7 @@ function wageNorm(v) { return String(v === undefined || v === null ? '' : v).rep
 function wageChartHTML(c, idx) {
   const th = WAGE_THEMES[c.theme] || WAGE_THEMES.blue;
   const rows = (c.rows || []).map((r, i) => `<div class="wc-row" style="background:${WAGE_ROW_COLORS[i % WAGE_ROW_COLORS.length]}">
-      <div>${escHtml(i === 0 ? t('wRowFirst', localDigits(r.pieces)) : t('wRow', localDigits(r.pieces)))}</div><div>${escHtml(localDigits(r.rate))}</div></div>`).join('');
+      <div>${escHtml(t('wRow', localDigits(r.pieces)))}</div><div>${escHtml(localDigits(r.rate))}</div></div>`).join('');
   return `<div class="wc"><div class="wc-title" style="background:${th[0]}">${escHtml(c.title)}</div>
     <div class="wc-cols" style="background:${th[1]}"><div>${t('wColPcs')}</div><div>${t('wColRate')}</div></div>${rows}
     <div class="wc-foot"><button type="button" class="wc-btn" onclick="wageStartEdit(${idx})">${t('wEdit')}</button></div></div>`;
@@ -2709,7 +2714,8 @@ function wageChartHTML(c, idx) {
 function wageEditHTML() {
   const d = wageEdit.draft;
   const sw = Object.keys(WAGE_THEMES).map(k => `<button type="button" class="${d.theme === k ? 'on' : ''}" style="background:${WAGE_THEMES[k][0]}" onclick="wageSetTheme('${k}')" aria-label="${k}"></button>`).join('');
-  const rows = d.rows.map((r, i) => `<div class="wc-erow">
+  const rows = d.rows.map((r, i) => `<div class="wc-erow" data-i="${i}" style="order:${i}">
+      <button type="button" class="wc-grip" aria-label="${t('wDrag')}"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></button>
       <input class="input-field text-sm font-semibold w-full" id="wage-p-${i}" type="text" inputmode="numeric" value="${escAttr(r.pieces)}" oninput="wageCell(${i},'pieces',this.value)" />
       <input class="input-field text-sm font-semibold w-full" id="wage-r-${i}" type="text" inputmode="decimal" value="${escAttr(r.rate)}" oninput="wageCell(${i},'rate',this.value)" />
       <button type="button" class="wc-x" onclick="wageDelRow(${i})" aria-label="${t('wDelRow')}">×</button></div>`).join('');
@@ -2717,8 +2723,9 @@ function wageEditHTML() {
     <div><label>${t('wName')}</label><input class="input-field text-sm font-semibold w-full" id="wage-title" type="text" value="${escAttr(d.title)}" oninput="wageEdit.draft.title=this.value" /></div>
     <div><label>${t('wColor')}</label><div class="wc-sw">${sw}</div></div>
     <div style="display:grid;gap:8px">
-      <div class="wc-erow"><label style="margin:0">${t('wColPcs')}</label><label style="margin:0">${t('wColRate')}</label><span></span></div>
-      ${rows}
+      <div class="wc-erow wc-ehead"><span></span><label style="margin:0">${t('wColPcs')}</label><label style="margin:0">${t('wColRate')}</label><span></span></div>
+      <div class="wc-erows" id="wage-rows">${rows}</div>
+      <p class="wc-hint">${t('wDragHint')}</p>
     </div>
     <div><button type="button" class="wc-btn" onclick="wageAddRow()">${t('wAddRow')}</button></div>
     <div class="wc-actions">
@@ -2789,6 +2796,58 @@ function wageDelRow(i) {
   renderWages();
 }
 
+// drag a row by its handle to move it up or down
+(function () {
+  let drag = null;
+  function edgeScroll(y) {
+    const h = window.innerHeight;
+    if (y < 110) window.scrollBy(0, -14);
+    else if (y > h - 130) window.scrollBy(0, 14);
+  }
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest && e.target.closest('.wc-grip');
+    if (!g) return;
+    const row = g.closest('.wc-erow');
+    const box = row && row.parentElement;
+    if (!box || box.id !== 'wage-rows') return;
+    e.preventDefault();
+    drag = { row, box, pid: e.pointerId };
+    row.classList.add('wc-drag');
+    try { g.setPointerCapture(e.pointerId); } catch (x) {}
+    haptic(15);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    e.preventDefault();
+    const { row, box } = drag;
+    const y = e.clientY;
+    edgeScroll(y);
+    const others = Array.from(box.querySelectorAll('.wc-erow')).filter(r => r !== row);
+    const mine = Number(row.style.order);
+    for (const r of others) {
+      const o = Number(r.style.order), b = r.getBoundingClientRect(), mid = b.top + b.height / 2;
+      if ((o < mine && y < mid) || (o > mine && y > mid)) {      // crossed this neighbour → swap places
+        row.style.order = o; r.style.order = mine;
+        break;
+      }
+    }
+  }, { passive: false });
+  function finish(e) {
+    if (!drag || (e && e.pointerId !== drag.pid)) return;
+    const { row, box } = drag;
+    drag = null;
+    row.classList.remove('wc-drag');
+    if (!wageEdit) return;
+    const rows = wageEdit.draft.rows;
+    const order = Array.from(box.querySelectorAll('.wc-erow')).sort((a, b) => Number(a.style.order) - Number(b.style.order)).map(r => Number(r.dataset.i));
+    wageEdit.draft.rows = order.map(i => rows[i]);
+    renderWages();
+    haptic(10);
+  }
+  document.addEventListener('pointerup', finish);
+  document.addEventListener('pointercancel', finish);
+})();
+
 async function wageSave() {
   if (!wageEdit || pendingSaves.has('wages')) return;
   const d = wageEdit.draft;
@@ -2802,8 +2861,8 @@ async function wageSave() {
     rows.push({ pieces: String(Number(p)), rate: String(Number(rt)) });
   }
   if (!rows.length) { showToast(t('wBadRow'), 'err'); haptic([40, 60, 40]); return; }
-  rows.sort((a, b) => Number(a.pieces) - Number(b.pieces));
-  for (let i = 1; i < rows.length; i++) { if (rows[i].pieces === rows[i - 1].pieces) { showToast(t('wDup'), 'err'); haptic([40, 60, 40]); return; } }
+  const seen = new Set();
+  for (const r of rows) { if (seen.has(r.pieces)) { showToast(t('wDup'), 'err'); haptic([40, 60, 40]); return; } seen.add(r.pieces); }
   const chart = { id: d.id, title, theme: d.theme, rows };
   const list = wageCharts().slice();
   if (wageEdit.isNew) list.push(chart); else list[wageEdit.idx] = chart;
