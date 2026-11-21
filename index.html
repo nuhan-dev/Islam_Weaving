@@ -640,22 +640,17 @@ button, a, .nav-tab { touch-action: manipulation; }
 
 </style>
 <style>
-/* six tabs on phones */
-@media (max-width: 767px) {
-  .tabbar-nav { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
-  .tabbar .nav-tab { font-size: 10.5px !important; }
-  .tabbar .nav-tab .tab-ico { padding: 4px 12px !important; }
-}
-@keyframes ind { from { padding: 4px 6px; } to { padding: 4px 12px; } }
 
 /* wage charts */
 .wc { border-radius: 20px; overflow: hidden; border: 1px solid var(--outline); background: #fff; box-shadow: 0 1px 2px rgba(60,45,10,.06); }
-.wc-title { padding: 14px 16px; text-align: center; color: #fff; font-weight: 800; font-size: 1.45rem; line-height: 1.3; }
-.wc-cols, .wc-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; text-align: center; }
-.wc-cols { color: #fff; font-weight: 800; font-size: 1.05rem; padding: 10px 6px; }
-.wc-row { padding: 11px 6px; font-weight: 800; font-size: 1.12rem; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
-.wc-foot { display: flex; gap: 10px; padding: 12px 14px; background: #fbf8ef; border-top: 1px solid var(--outline); }
-.wc-btn { border: 1.5px solid #cbbf9d; background: #fff; color: #3f2f0f; font-weight: 700; font-size: 13px; padding: 9px 18px; border-radius: 9999px; }
+.wc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; margin-top: 16px; }
+.wc-full { grid-column: 1 / -1; }
+.wc-title { padding: 10px 6px; text-align: center; color: #fff; font-weight: 800; font-size: 1.02rem; line-height: 1.3; }
+.wc-cols, .wc-row { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; text-align: center; }
+.wc-cols { color: #fff; font-weight: 800; font-size: .8rem; padding: 7px 3px; }
+.wc-row { padding: 8px 3px; font-weight: 800; font-size: .86rem; line-height: 1.25; color: #1f1c14; border-top: 1px solid rgba(255,255,255,.65); }
+.wc-foot { display: flex; justify-content: center; gap: 10px; padding: 9px 8px; background: #fbf8ef; border-top: 1px solid var(--outline); }
+.wc-btn { border: 1.5px solid #cbbf9d; background: #fff; color: #3f2f0f; font-weight: 700; font-size: 12.5px; padding: 7px 16px; border-radius: 9999px; }
 .wc-btn.danger { color: #a3262b; border-color: #e7b9b9; }
 .wc-btn:active { transform: scale(.97); }
 .wc-edit { padding: 16px; display: grid; gap: 12px; }
@@ -711,7 +706,6 @@ button, a, .nav-tab { touch-action: manipulation; }
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="production"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="singeing"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="lifetime"></button>
-    <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="wages"></button>
     <button class="glass-nav-btn nav-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap" data-tab="settings"></button>
   </nav>
 </div>
@@ -722,7 +716,6 @@ button, a, .nav-tab { touch-action: manipulation; }
   <div class="panel hidden" id="panel-production"></div>
   <div class="panel hidden" id="panel-singeing"></div>
   <div class="panel hidden" id="panel-lifetime"></div>
-  <div class="panel hidden" id="panel-wages"></div>
   <div class="panel hidden" id="panel-settings"></div>
 </main>
 
@@ -979,7 +972,6 @@ const TAB_ICONS = {
   production: IC('<path d="M3.5 20V10.5l5.5 3.2v-3.2l5.5 3.2V5h6v15z"/><path d="M7.5 17h1.5M11.5 17h1.5M15.5 17h1.5"/>'),
   singeing: IC('<path d="M12 3c.6 3.2 5 5 5 9.5a5 5 0 0 1-10 0c0-2 1-3.3 2.2-4.3.2 1.6.9 2.5 1.9 2.8C11 8.4 11.2 5.4 12 3z"/>'),
   lifetime: IC('<path d="M4 4v16h16"/><path d="M8 15l3.5-4 3 2.5L19.5 7.5"/>'),
-  wages: IC('<rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>'),
   settings: IC('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'),
 };
 
@@ -1000,7 +992,6 @@ function applyStaticText() {
   setTabLabel('production', 'tabProduction');
   setTabLabel('singeing', 'tabSingeing');
   setTabLabel('lifetime', 'tabLifetime');
-  setTabLabel('wages', 'tabWages');
   setTabLabel('settings', 'tabSettings');
 }
 if (phoneMQ.addEventListener) phoneMQ.addEventListener('change', applyStaticText);
@@ -2000,7 +1991,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2386,7 +2377,6 @@ function renderAllRaw() {
   renderProduction();
   renderSingeing();
   renderLifetime();
-  renderWages();
   renderSettings();
 }
 
@@ -2703,7 +2693,7 @@ function wageEditHTML() {
       <input class="input-field text-sm font-semibold w-full" id="wage-p-${i}" type="text" inputmode="numeric" value="${escAttr(r.pieces)}" oninput="wageCell(${i},'pieces',this.value)" />
       <input class="input-field text-sm font-semibold w-full" id="wage-r-${i}" type="text" inputmode="decimal" value="${escAttr(r.rate)}" oninput="wageCell(${i},'rate',this.value)" />
       <button type="button" class="wc-x" onclick="wageDelRow(${i})" aria-label="${t('wDelRow')}">×</button></div>`).join('');
-  return `<div class="wc" id="wage-editor"><div class="wc-edit">
+  return `<div class="wc wc-full" id="wage-editor"><div class="wc-edit">
     <div><label>${t('wName')}</label><input class="input-field text-sm font-semibold w-full" id="wage-title" type="text" value="${escAttr(d.title)}" oninput="wageEdit.draft.title=this.value" /></div>
     <div><label>${t('wColor')}</label><div class="wc-sw">${sw}</div></div>
     <div style="display:grid;gap:8px">
@@ -2719,16 +2709,18 @@ function wageEditHTML() {
 }
 
 function renderWages() {
-  const el = document.getElementById('panel-wages');
+  const el = document.getElementById('wages-box');
   if (!el) return;
-  if (!data) { el.innerHTML = emptyNotice(); return; }
+  if (!data) { el.innerHTML = ''; return; }
   const charts = wageCharts();
   const editingNew = !!(wageEdit && wageEdit.isNew);
   let html = `<div class="space-y-4"><div class="glass-card p-5"><div class="flex items-start justify-between gap-3">
       <div><h2 class="font-bold text-brand-900 text-base">${t('wTitle')}</h2><p class="text-xs text-slate-600 font-medium mt-1">${t('wDesc')}</p></div>
       <button type="button" class="glass-btn-primary font-bold text-xs py-2.5 px-4 rounded-xl flex-none whitespace-nowrap" onclick="wageNew()">${t('wAdd')}</button></div></div>`;
+  html += '<div class="wc-grid">';
   charts.forEach((c, i) => { html += (wageEdit && !wageEdit.isNew && wageEdit.idx === i) ? wageEditHTML() : wageChartHTML(c, i); });
   if (editingNew) html += wageEditHTML();
+  html += '</div>';
   if (!charts.length && !editingNew) html += `<div class="glass-card p-8 text-center text-slate-700 font-semibold text-sm">${t('wEmpty')}</div>`;
   el.innerHTML = html + '</div>';
   applyPending();
@@ -3078,7 +3070,9 @@ function renderSettings() {
           <button class="px-5 py-2.5 rounded-xl text-xs font-bold transition ${lang === 'en' ? 'glass-btn-primary' : 'bg-white/60 text-slate-700 border border-slate-200 hover:bg-white/90'}" onclick="setLanguage('en')">${t('langEnglish')}</button>
         </div>
       </div>
+      <div id="wages-box"></div>
     </div>`;
+  renderWages();
 }
 
 function saveSettings() {
