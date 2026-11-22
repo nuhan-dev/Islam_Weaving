@@ -2013,7 +2013,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.0.1';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2200,6 +2200,7 @@ function statItems() {
   return items;
 }
 
+let tickerSig = '';
 function renderTicker() {
   const box = document.getElementById('newsTicker');
   if (!box) return;
