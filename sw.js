@@ -1,6 +1,6 @@
 // Islam Weaving — service worker: instant app shell + offline fallback.
 // Google Apps Script (sheet sync) requests are never cached or touched.
-const VERSION = 'iwf-v32';
+const VERSION = 'iwf-v33';
 const SHELL = ['./', 'index.html', 'logo-v4.png', 'icon-v4-512.png', 'manifest.json'];
 
 self.addEventListener('install', event => {
