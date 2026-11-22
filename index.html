@@ -611,7 +611,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .tick-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #f7f2e4; font-size: 20px; line-height: 1; }
 @media (prefers-reduced-motion: reduce) { .tick-move { animation: none; } .tick-move span:last-child { display: none; } .tick-track { overflow-x: auto; } }
 
-/* always-on news ticker (slim); the PDF notice uses the two-row .alert layout */
+/* always-on running text (slim); the PDF notice uses the two-row .alert layout */
 #newsTicker { padding-bottom: 8px; }
 #newsTicker[hidden] { display: none; }
 .ticker.news { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; box-shadow: none; }
@@ -833,7 +833,8 @@ const I18N = {
     remindText: 'শিটের তারিখ বদলানোর আগে এই সাইকেলের PDF রিপোর্ট নিয়ে রাখুন।',
     remindLater: 'পরে',
     remindLabel: 'নোটিশ',
-    newsLabel: 'শীর্ষ খবর',
+    newsLabel: 'হিসাব',
+    tkProd: m => 'প্রোডাকশন (' + m + ')', unitPcs: 'পিস', unitThaan: 'থান',
     histTitle: 'শেষ ৩টি রিপোর্ট',
     histDesc: 'প্রতিটা ৪ সপ্তাহের রিপোর্ট এই ফোনে নিজে জমা থাকে। যখন দরকার আবার ডাউনলোড করুন।',
     histEmpty: 'এখনো কোনো রিপোর্ট জমা হয়নি। সপ্তাহ ৪-এর ডেটা সেভ করলে এখানে নিজে জমা হবে।',
@@ -943,7 +944,8 @@ const I18N = {
     remindText: 'Download this cycle\'s PDF report before you change the dates in the sheet.',
     remindLater: 'Later',
     remindLabel: 'Notice',
-    newsLabel: 'Top news',
+    newsLabel: 'Summary',
+    tkProd: m => 'Production (' + m + ')', unitPcs: 'pcs', unitThaan: 'thaan',
     histTitle: 'Last 3 reports',
     histDesc: 'The report of each 4-week cycle is kept on this phone. Download it again whenever you need it.',
     histEmpty: 'No reports saved yet. They are saved here automatically once week 4 data is entered.',
@@ -2011,7 +2013,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '2.9';
+const APP_VERSION = '3.0';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2164,13 +2166,39 @@ function reportHistoryHTML() {
   </div>`;
 }
 
-// ---- news ticker: Bangladesh headlines all the time; the PDF notice takes over until the PDF is downloaded ----
-const NEWS_URLS = ['https://raw.githubusercontent.com/nuhan-dev/Islam_Weaving/main/news.json', 'news.json'];
-let newsItems = [];
-let tickerSig = '';
-try { const nc = JSON.parse(localStorage.getItem('newsCache') || 'null'); if (nc && Array.isArray(nc.items)) newsItems = nc.items; } catch (e) {}
-
+// ---- running text: the business numbers all the time; the PDF notice takes over until the PDF is downloaded ----
 function escHtml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function tkMoney(n) {
+  const v = Number(n) || 0;
+  return localDigits((v < 0 ? '−' : '') + fmtBDT(Math.abs(v)));
+}
+function tkNum(n) { return localDigits((Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })); }
+
+// Production -> Singeing -> Profit -> Cumulative income -> Lifetime, built from the same numbers as the dashboard
+function statItems() {
+  if (!data || !Array.isArray(data.weeks) || !Array.isArray(data.singeing)) return [];
+  const sum = (arr, key) => arr.reduce((s, x) => s + (Number(x[key]) || 0), 0);
+  const items = [];
+  const pcs = sum(data.weeks, 'totalPieces'), thaan = sum(data.weeks, 'weeklyThaan');
+  if (pcs > 0) items.push({ t: t('tkProd', getCycleShortName()), s: tkNum(pcs) + ' ' + t('unitPcs') + ' · ' + tkNum(thaan) + ' ' + t('unitThaan') });
+  const sThaan = sum(data.singeing, 'singedThaan'), sPay = sum(data.singeing, 'pay');
+  if (sThaan > 0 || sPay > 0) items.push({ t: t('labelSingeingIncome', getCycleShortName()), s: tkNum(sThaan) + ' ' + t('unitThaan') + ' · ' + tkMoney(sPay) });
+  if (pcs > 0) {
+    items.push({ t: t('label24'), s: tkMoney(sum(data.weeks, 'totalProfit')) });
+    items.push({ t: t('label4'), s: tkMoney(sum(data.weeks, 'myProfit')) });
+    items.push({ t: t('label2'), s: tkMoney(sum(data.weeks, 'twoMachineProfit')) });
+    items.push({ t: t('labelCombinedIncome'), s: tkMoney(sum(data.weeks, 'combinedProfit')) });
+  }
+  const rows = Array.isArray(data.lifetime) ? data.lifetime.filter(r => r.profitLossLifetime !== '') : [];
+  const last = rows.slice(-1)[0];
+  if (last) {
+    items.push({ t: t('labelYearIncome', localDigits(last.year)), s: tkMoney(last.cumIncomeYear) });
+    items.push({ t: t('labelYearPL', localDigits(last.year)), s: tkMoney(last.profitLossYear) });
+    items.push({ t: t('labelLifetimePL'), s: tkMoney(last.profitLossLifetime) });
+  }
+  return items;
+}
 
 function renderTicker() {
   const box = document.getElementById('newsTicker');
@@ -2181,8 +2209,9 @@ function renderTicker() {
     const msg = t('remindTitle') + ' — ' + t('remindText');
     body = '<span class="tk-item">' + escHtml(msg) + '</span>';
     chars = msg.length;
-  } else if (newsItems.length) {
-    body = newsItems.map(n => { chars += n.t.length + (n.s ? n.s.length : 0) + 6; return '<span class="tk-item">' + escHtml(n.t) + (n.s ? ' <em>' + escHtml(n.s) + '</em>' : '') + '</span>'; }).join('<span class="tk-dot">◆</span>');
+  } else {
+    const stats = statItems();
+    body = stats.map(n => { chars += n.t.length + (n.s ? n.s.length : 0) + 6; return '<span class="tk-item">' + escHtml(n.t) + (n.s ? ' <em>' + escHtml(n.s) + '</em>' : '') + '</span>'; }).join('<span class="tk-dot">◆</span>');
   }
   if (!body) { box.hidden = true; tickerSig = ''; return; }
   const sig = (alert ? 'a' : 'n') + lang + body;
@@ -2199,23 +2228,6 @@ function renderTicker() {
     box.innerHTML = '<div class="ticker news" role="marquee"><span class="tick-label">' + pingDot() + t('newsLabel') + '</span>' + track + '</div>';
   }
   applyPending();
-}
-
-async function loadNews() {
-  if (!navigator.onLine) return;
-  for (const u of NEWS_URLS) {
-    try {
-      const r = await fetchWithTimeout(u + '?t=' + Math.floor(Date.now() / 600000), { cache: 'no-store' }, 8000);
-      if (!r.ok) continue;
-      const j = await r.json();
-      if (j && Array.isArray(j.items) && j.items.length) {
-        newsItems = j.items.filter(n => n && n.t).slice(0, 16);
-        try { localStorage.setItem('newsCache', JSON.stringify({ items: newsItems, updated: j.updated })); } catch (e) {}
-        renderTicker();
-        return;
-      }
-    } catch (e) {}
-  }
 }
 
 function aboutCardHTML() {
@@ -3190,13 +3202,10 @@ if (scriptUrl) {
 }
 updateOnlineBar();
 setTimeout(hideSplashSoon, 3000);
-loadNews();
-setInterval(loadNews, 30 * 60 * 1000);
 
 window.addEventListener('online', () => { updateOnlineBar(); if (scriptUrl) fetchFromSheet(); });
 window.addEventListener('offline', updateOnlineBar);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') loadNews();
   if (document.visibilityState === 'visible' && scriptUrl && navigator.onLine && Date.now() - lastSync > 60000) fetchFromSheet();
 });
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
