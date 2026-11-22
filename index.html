@@ -544,6 +544,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .rep-chip.on { background: var(--tonal); border-color: var(--tonal); color: var(--on-tonal); }
 .rep-share { border-radius: 9999px; border: 1px solid #b9dfc9; color: #0b5a3e; background: #fff; min-height: 44px; }
 .rep-ico { background: #fde7e5; color: #8c1d18; box-shadow: none; border-radius: 14px; }
+.rep-ico svg { display: block; filter: drop-shadow(0 2px 3px rgba(140,29,24,.18)); }
 .ripple { position: absolute; border-radius: 50%; background: currentColor; opacity: .2; transform: scale(0); animation: rip .55s ease-out forwards; pointer-events: none; }
 @keyframes rip { to { transform: scale(1); opacity: 0; } }
 
@@ -2014,7 +2015,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0.5';
+const APP_VERSION = '3.0.7';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2287,7 +2288,7 @@ window.onPdfSaved = function (ok, uri) {
 
 function reportFileName() {
   const groups = getCycleInfo();
-  const tag = groups ? groups.map(g => MONTH_NAMES[g.m].slice(0, 3) + '-' + g.y).join('_') : 'Report';
+  const tag = groups ? groups.map(g => MONTH_NAMES[g.m].slice(0, 3) + '-' + g.y + ' (Week ' + (g.from === g.to ? g.from : g.from + '-' + g.to) + ')').join('_') : 'Report';
   return 'Islam-Weaving-Report-' + tag + '.pdf';
 }
 
@@ -2350,7 +2351,7 @@ function reportCardHTML() {
   const chip = (code, label) => `<button type="button" class="rep-chip${reportLang === code ? ' on' : ''}" onclick="setReportLang('${code}')">${label}</button>`;
   return `<div class="glass-card p-6 border-l-4 border-l-luxuryGold-500">
       <div class="rep-head">
-        <div class="rep-ico">PDF</div>
+        <div class="rep-ico"><svg viewBox="0 0 48 56" width="40" height="46" aria-hidden="true"><path d="M8 2h22l12 12v36a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#fff" stroke="#e5b7b3" stroke-width="1.6"/><path d="M30 2v9a3 3 0 0 0 3 3h9z" fill="#f3c9c5"/><rect x="2" y="26" width="38" height="17" rx="4" fill="#dc2626"/><text x="21" y="39.2" text-anchor="middle" font-family="Roboto,Arial,sans-serif" font-size="12.5" font-weight="800" fill="#fff" letter-spacing=".6">PDF</text><path d="M12 18h14M12 22h9" stroke="#e5b7b3" stroke-width="2" stroke-linecap="round"/></svg></div>
         <div><h3 class="font-bold text-brand-900 text-base">${t('reportTitle')}</h3><p class="text-xs text-slate-600 font-medium">${t('reportDesc')}</p></div>
       </div>
       <div class="rep-lang"><span>${t('reportLangLabel')}</span>${chip('en', 'English')}${chip('bn', 'বাংলা')}</div>
