@@ -622,6 +622,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .tick-move .tk-item em { font-style: normal; font-size: 11.5px; color: #ffd479; margin-left: 4px; opacity: .9; }
 .tick-move .tk-dot { color: #d93025; font-size: 9px; padding: 0 16px; }
 .ticker.alert .tick-move .tk-item { font-size: 14px; }
+.tick-move .tk-n { font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif !important; font-weight: 600; font-variant-numeric: lining-nums; letter-spacing: .01em; }
 
 /* report history */
 .hist-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid #efe7d2; }
@@ -2013,7 +2014,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0.1';
+const APP_VERSION = '3.0.2';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2171,9 +2172,14 @@ function escHtml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt
 
 function tkMoney(n) {
   const v = Number(n) || 0;
-  return localDigits((v < 0 ? '−' : '') + fmtBDT(Math.abs(v)));
+  return (v < 0 ? '−' : '') + fmtBDT(Math.abs(v));
 }
-function tkNum(n) { return localDigits((Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })); }
+function tkNum(n) { return (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+// running text: every number is shown with English digits in an English font; the words stay Bengali
+function tkText(v) {
+  const ascii = String(v).replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+  return escHtml(ascii).replace(/[0-9][0-9,.]*/g, m => '<span class="tk-n">' + m + '</span>');
+}
 
 // Production -> Singeing -> Profit -> Cumulative income -> Lifetime, built from the same numbers as the dashboard
 function statItems() {
@@ -2208,11 +2214,11 @@ function renderTicker() {
   let body = '', chars = 0;
   if (alert) {
     const msg = t('remindTitle') + ' — ' + t('remindText');
-    body = '<span class="tk-item">' + escHtml(msg) + '</span>';
+    body = '<span class="tk-item">' + tkText(msg) + '</span>';
     chars = msg.length;
   } else {
     const stats = statItems();
-    body = stats.map(n => { chars += n.t.length + (n.s ? n.s.length : 0) + 6; return '<span class="tk-item">' + escHtml(n.t) + (n.s ? ' <em>' + escHtml(n.s) + '</em>' : '') + '</span>'; }).join('<span class="tk-dot">◆</span>');
+    body = stats.map(n => { chars += n.t.length + (n.s ? n.s.length : 0) + 6; return '<span class="tk-item">' + tkText(n.t) + (n.s ? ' <em>' + tkText(n.s) + '</em>' : '') + '</span>'; }).join('<span class="tk-dot">◆</span>');
   }
   if (!body) { box.hidden = true; tickerSig = ''; return; }
   const sig = (alert ? 'a' : 'n') + lang + body;
