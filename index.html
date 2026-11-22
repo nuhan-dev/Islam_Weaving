@@ -834,7 +834,7 @@ const I18N = {
     remindText: 'শিটের তারিখ বদলানোর আগে এই সাইকেলের PDF রিপোর্ট নিয়ে রাখুন।',
     remindLater: 'পরে',
     remindLabel: 'নোটিশ',
-    newsLabel: 'হিসাব',
+    newsLabel: 'আপডেট',
     tkProd: m => 'প্রোডাকশন (' + m + ')', unitPcs: 'পিস', unitThaan: 'থান',
     histTitle: 'শেষ ৩টি রিপোর্ট',
     histDesc: 'প্রতিটা ৪ সপ্তাহের রিপোর্ট এই ফোনে নিজে জমা থাকে। যখন দরকার আবার ডাউনলোড করুন।',
@@ -945,7 +945,7 @@ const I18N = {
     remindText: 'Download this cycle\'s PDF report before you change the dates in the sheet.',
     remindLater: 'Later',
     remindLabel: 'Notice',
-    newsLabel: 'Summary',
+    newsLabel: 'Update',
     tkProd: m => 'Production (' + m + ')', unitPcs: 'pcs', unitThaan: 'thaan',
     histTitle: 'Last 3 reports',
     histDesc: 'The report of each 4-week cycle is kept on this phone. Download it again whenever you need it.',
@@ -2014,7 +2014,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0.4';
+const APP_VERSION = '3.0.5';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2253,7 +2253,7 @@ function fitTicker(unit, chars) {
   const html = unit.repeat(reps);
   copies.forEach(c => { c.innerHTML = html; });
   const w = copies[0].getBoundingClientRect().width || Math.max(need, chars * 8 * reps);
-  move.style.animationDuration = Math.max(12, Math.round(w / 55)) + 's';
+  move.style.animationDuration = Math.max(12, Math.round(w / 42)) + 's';
 }
 
 function aboutCardHTML() {
