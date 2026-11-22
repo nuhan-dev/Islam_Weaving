@@ -617,7 +617,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 .ticker.news { flex-direction: row; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; box-shadow: none; }
 .ticker.news .tick-label { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
 .ticker.news .tick-track { flex: 1 1 auto; width: auto; }
-.tick-move .tk-copy { display: inline-flex; align-items: center; flex: none; min-width: min(100vw, 640px); padding-right: 40px; }
+.tick-move .tk-copy { display: inline-flex; align-items: center; flex: none; padding: 0; }
 .tick-move .tk-item { font-size: 13.5px; font-weight: 500; white-space: nowrap; padding: 0; }
 .tick-move .tk-item em { font-style: normal; font-size: 11.5px; color: #ffd479; margin-left: 4px; opacity: .9; }
 .tick-move .tk-dot { color: #d93025; font-size: 9px; padding: 0 16px; }
@@ -2014,7 +2014,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0.2';
+const APP_VERSION = '3.0.3';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -2225,16 +2225,35 @@ function renderTicker() {
   box.hidden = false;
   if (sig === tickerSig) { applyPending(); return; }
   tickerSig = sig;
-  const dur = Math.max(14, Math.round(chars * 0.13));
+  const SEP = '<span class="tk-dot">◆</span>';
+  const unit = body + SEP;   // every repeat ends with a separator, so the gap is the same everywhere
   const dl = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>';
-  const track = '<div class="tick-track"><div class="tick-move" style="animation-duration:' + dur + 's"><span class="tk-copy">' + body + '</span><span class="tk-copy" aria-hidden="true">' + body + '</span></div></div>';
+  const track = '<div class="tick-track"><div class="tick-move"><span class="tk-copy">' + unit + '</span><span class="tk-copy" aria-hidden="true">' + unit + '</span></div></div>';
   if (alert) {
     box.innerHTML = '<div class="ticker alert" role="status"><div class="tick-head"><span class="tick-label">' + pingDot() + t('remindLabel') + '</span>'
       + '<button type="button" class="tick-pdf" data-save="report" onclick="downloadReport(false)" aria-label="' + t('reportDownload') + '">' + dl + '<b>PDF</b></button></div>' + track + '</div>';
   } else {
     box.innerHTML = '<div class="ticker news" role="marquee"><span class="tick-label">' + pingDot() + t('newsLabel') + '</span>' + track + '</div>';
   }
+  fitTicker(unit, chars);
   applyPending();
+}
+// repeat the text inside each copy until one copy is wider than the screen, so the loop never shows an empty gap
+function fitTicker(unit, chars) {
+  const box = document.getElementById('newsTicker');
+  if (!box) return;
+  const track = box.querySelector('.tick-track'), move = box.querySelector('.tick-move');
+  const copies = box.querySelectorAll('.tk-copy');
+  if (!track || !move || copies.length < 2) return;
+  const need = Math.max(track.clientWidth || 0, window.innerWidth || 360) + 40;
+  let reps = 1;
+  const w0 = copies[0].getBoundingClientRect().width;
+  if (w0 > 0) reps = Math.min(12, Math.max(1, Math.ceil(need / w0)));
+  else reps = Math.min(12, Math.max(1, Math.ceil(need / Math.max(60, chars * 8))));
+  const html = unit.repeat(reps);
+  copies.forEach(c => { c.innerHTML = html; });
+  const w = copies[0].getBoundingClientRect().width || Math.max(need, chars * 8 * reps);
+  move.style.animationDuration = Math.max(12, Math.round(w / 55)) + 's';
 }
 
 function aboutCardHTML() {
