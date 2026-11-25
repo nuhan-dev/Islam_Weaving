@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Islam Weaving" />
-<link rel="apple-touch-icon" href="icon-v4-192.png" />
-<link rel="icon" type="image/png" href="logo-v4.png" />
+<link rel="apple-touch-icon" href="icon-v5-192.png" />
+<link rel="icon" type="image/png" href="logo-v5.png" />
 <script>
 // Start the sheet request as early as possible (before the rest of the page is parsed)
 window.__DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxVW_dj5K0oL0g2LAj055Nw2be6bfSNAdCFsZgMEQDDxhnfDPSYOpoaSl_tf-YU4MBMYA/exec';
@@ -697,7 +697,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 <div id="splash" aria-hidden="true">
-  <img src="icon-v4-512.png" alt="" />
+  <img src="icon-v5-512.png" alt="" />
   <div class="splash-bar"><i></i></div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -707,7 +707,7 @@ button, a, .nav-tab { touch-action: manipulation; }
 <header class="app-header bg-brand-950/80 text-white border-b border-white/10 shadow-2xl">
   <div class="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center gap-3">
     <div class="hdr-left flex items-center gap-3.5">
-      <img src="logo-v4.png" alt="Islam Weaving" width="44" height="44" class="w-11 h-11 rounded-2xl shadow-lg border border-white/30 object-cover" />
+      <img src="logo-v5.png" alt="Islam Weaving" width="44" height="44" class="w-11 h-11 rounded-2xl shadow-lg border border-white/30 object-cover" />
       <div class="hdr-text">
         <h1 class="font-serif text-lg sm:text-xl text-slate-50 font-bold leading-tight" id="hdrTitle"></h1>
         <p class="text-[11px] text-slate-400 font-medium" id="hdrSubtitle"></p>
@@ -2015,7 +2015,7 @@ function jpegToPdf(jpg, wPx, hPx) {
 
 
 // ================= Safety checks, month-end reminder, version =================
-const APP_VERSION = '3.0.8';
+const APP_VERSION = '3.0.9';
 
 function nfmt(v) { return localDigits(Math.round(Number(v) || 0).toLocaleString('en-IN')); }
 function avgOf(list) { const a = list.map(Number).filter(v => v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
