@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#000000" android:pathData="M25,25h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M49,25h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M73,25h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M37,37h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M61,37h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M25,49h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M49,49h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M73,49h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M37,61h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M61,61h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M25,73h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M49,73h10v10h-10z" />
-    <path android:fillColor="#000000" android:pathData="M73,73h10v10h-10z" />
+    <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData="M37.06,66.81 L51.59,66.81 L50.78,65.41 L37.87,65.41 L31.28,54.00 L37.87,42.59 L51.05,42.59 L57.63,54.00 L56.28,56.35 L57.09,57.75 L59.25,54.00 L51.85,41.19 L37.06,41.19 L29.66,54.00 Z M35.54,69.44 L53.11,69.44 L52.30,68.04 L36.35,68.04 L28.24,54.00 L36.35,39.96 L52.57,39.96 L60.67,54.00 L57.80,58.98 L58.61,60.38 L62.29,54.00 L53.37,38.56 L35.54,38.56 L26.62,54.00 Z M32.70,54.00 L38.58,64.18 L50.07,64.18 L49.26,62.78 L39.39,62.78 L34.32,54.00 L39.39,45.22 L49.53,45.22 L54.60,54.00 L54.92,54.00 L55.57,55.11 L56.21,54.00 L50.33,43.82 L38.58,43.82 Z" />
+    <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData="M56.15,66.81 L70.94,66.81 L78.34,54.00 L70.94,41.19 L56.41,41.19 L57.22,42.59 L70.13,42.59 L76.72,54.00 L70.13,65.41 L56.95,65.41 L50.37,54.00 L51.72,51.65 L50.91,50.25 L48.75,54.00 Z M54.63,69.44 L72.46,69.44 L81.38,54.00 L72.46,38.56 L54.89,38.56 L55.70,39.96 L71.65,39.96 L79.76,54.00 L71.65,68.04 L55.43,68.04 L47.33,54.00 L50.20,49.02 L49.39,47.62 L45.71,54.00 Z M51.79,54.00 L57.67,64.18 L69.42,64.18 L75.30,54.00 L69.42,43.82 L57.93,43.82 L58.74,45.22 L68.61,45.22 L73.68,54.00 L68.61,62.78 L58.47,62.78 L53.40,54.00 L53.08,54.00 L52.43,52.89 Z" />
 </vector>
